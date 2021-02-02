@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load html_escape %}
+
+{% block meta_title %}
+    {% comment %}{% if image.item_part.pagination %}Page{% else %}Folio{% endif %}:{% endcomment %}
+    Manuscript Image:
+    {{image|capfirst}}
+{% endblock %}
+
+{% block main %}
+
+<h2 class='header1'>
+    {% comment %}{% if image.item_part.pagination %}Page{% else %}Folio{% endif %}:{% endcomment %}
+    Manuscript Image:
+    <a href="{{ image.item_part.get_absolute_url }}">{{ image.item_part|capfirst }}</a>: {{ image.locus }}
+    {% include "digipal/admin_edit.html" with instance=image %}
+</h2>
+
+<ul class='nav nav-tabs' id='top'>
+  <li><a href='../'>View Manuscript</a></li>
+  <li class='active'><a>Annotations by Allograph</a></li>
+  <li><a href='../metadata/'>View Metadata</a></li>
+  <li><a href='../copyright/'>Image Copyright</a></li>
+</ul>
+
+<div class="annotations">
+   {% include "digipal/hands.html" %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    {% if can_edit %}
+      <script src="{{ STATIC_URL }}digipal/scripts/libs/openlayers/OpenLayers.js"></script>
+      <script src="{{ STATIC_URL }}digipal/scripts/libs/openlayers-image-annotation/annotator-helper.js"></script>
+      <script src="{{ STATIC_URL }}digipal/scripts/libs/openlayers-image-annotation/annotator.js"></script>
+      <script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.js"></script>
+      <script src="{{ STATIC_URL }}digipal/scripts/annotator-digipal.js"></script>
+      <script type="text/javascript">
+          $(document).ready(function(){
+            annotator = new DigipalAnnotator('{{ MEDIA_URL }}',
+                        'x', {{ width }}, {{ height }},
+                        '{{ image_server_url }}', "{{can_edit}}");
+    
+            annotator.hands_page = "{{hands_page}}";
+    
+            if(annotator){
+              $.getScript('{{ STATIC_URL }}digipal/scripts/allographs-annotator.js');
+            }
+          });
+      </script>
+    {% else %}
+        <script src="{{ STATIC_URL }}digipal/scripts/allographs-public-user.js"></script>
+    {% endif %}
+    <script>    
+      function selectFeature(id) {
+        window.opener.annotator.selectFeatureByIdAndCentre(id);
+        window.opener.focus();
+        return false;
+      }
+    </script>
+{% endblock %}

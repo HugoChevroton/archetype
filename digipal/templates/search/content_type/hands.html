@@ -1,0 +1,39 @@
+{% load mezzanine_tags pagination_tags html_escape hand_filters %}
+
+<table class="table table-condensed">
+    <tr>
+        {% include "search/search_headings.html" %}
+    </tr>
+    
+    {% filter tag_phrase_terms:terms %}
+        {% for hand in records %}
+            <tr class="{% cycle 'bgColour' '' %}">
+
+                <td>
+                    {% if can_edit %}
+                        <a class="btn btn-default" href="/admin/digipal/hand/{{ hand.id }}">Edit</a>
+                    {% endif %}
+                    <a class="btn btn-default" href="{% filter add_query_params:request.META.QUERY_STRING %}{{ hand.get_absolute_url }}?result_type={{template_type}}{% endfilter %}">View</a>
+                </td>
+
+                <td>{{ hand.get_search_label }}
+                    {% image_icon hand.images "COUNT image with this hand" hand.get_absolute_url|add:"pages" template_type request %}
+                </td>
+
+                <td>{{ hand.item_part.current_item.repository.place.name }}, {{ hand.item_part.current_item.repository.name }}</td>
+
+                <td>{{ hand.item_part.current_item.shelfmark }}</td>
+                <td>{{ hand.label }}</td>
+                <td>{{ hand.assigned_place.name }}</td>
+                <td>{{ hand.assigned_date.date }}</td>
+                <td>
+                    {% for item in hand.item_part.historical_items.all %}
+                        {% if not forloop.first %}, {% endif %}
+                        {{ item.catalogue_number }}
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endfor %}
+    {% endfilter %}
+    
+</table>

@@ -1,0 +1,29 @@
+{% load mezzanine_tags pagination_tags html_escape %}
+
+<table class="table table-condensed">
+    <tr>
+        <th>&nbsp;</th>
+        <th>Name</th>
+        <th>Date</th>
+        <th>Scriptorium</th>
+    </tr>
+
+    {% filter tag_phrase_terms:terms %}
+        {% for scribe in records %}
+            <tr class="{% cycle 'bgColour' '' %}">
+                <td>
+                    {% if can_edit %}
+                        <a class="btn btn-default" href="/admin/digipal/scribe/{{ scribe.id }}">Edit</a>
+                    {% endif %}
+                    <a class="btn btn-default" href="{% filter add_query_params:request.META.QUERY_STRING %}{{ scribe.get_absolute_url }}?result_type={{template_type}}{% endfilter %}">View</a>
+                </td>
+                <td>{{ scribe.name }}
+                    {% image_icon scribe.get_images "COUNT images for this scribe" scribe.get_absolute_url|add:"pages" template_type request %}
+                </td>
+                <td>{{ scribe.date }}</td>
+                <td>{{ scribe.scriptorium.name }}</td>
+            </tr>
+        {% endfor %}
+    {% endfilter %}
+
+</table>

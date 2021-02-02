@@ -1,0 +1,35 @@
+{% load mezzanine_tags pagination_tags html_escape %}
+
+<table class="table table-condensed">
+    <tr>
+        {% include "search/search_headings.html" %}
+    </tr>
+
+    {% filter tag_phrase_terms:terms %}
+        {% for manuscript in records %}
+            <tr>
+                <td>
+                    {% if can_edit %}
+                        <a class="btn btn-default" href="/admin/digipal/itempart/{{ manuscript.id }}">Edit</a>
+                    {% endif %}
+                    <a class="btn btn-default" href="{% filter add_query_params:request.META.QUERY_STRING %}{{ manuscript.get_absolute_url }}?result_type={{template_type}}{% endfilter %}">View</a>
+                </td>
+                <td>
+                    {% for item in manuscript.historical_items.all %}
+                        {% if not forloop.first %}, {% endif %}
+                        {{ item.catalogue_number }}
+                    {% endfor %}
+
+                    {% image_icon manuscript.images "COUNT images of this manuscript" manuscript.get_absolute_url|add:"pages" template_type request %}
+                </td>
+
+                <td>{{ manuscript.current_item.repository.place.name }}, {{ manuscript.current_item.repository.name }}</td>
+                <td>{{ manuscript.current_item.shelfmark }}</td>
+                <td>{{ manuscript.locus }}</td>
+                <td>
+                    {{ manuscript.description_snippet }}
+                </td>
+            </tr>
+        {% endfor %}
+    {% endfilter %}
+</table>

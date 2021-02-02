@@ -1,0 +1,58 @@
+{% load html_escape %}
+{% comment %}
+    Displays an image as part of a list.
+
+    Usage: {% include "digipal/folio_image.html" with image=IMAGE width=WIDTH full_label=FULL img_col=3 %}
+    Where:
+        IMAGE is an instance of the digipal_image model
+        WIDTH is the desired width of the image in the list
+        FULL is 1 for showing the full image label, 0 for only showing the locus
+
+{% endcomment %}
+<div class='col-md-{{ img_col|default:3 }} col-xs-12 centered'>
+    <div class="panel panel-thumb">
+        <div class='annotations_count_images'>
+            {# {% with annotation_count=image.annotation_set.all.publicly_visible.count %} #}
+            {% include 'digipal/folio_image_counts.html' %}
+        </div>
+
+        {% spaceless %}
+            <span class="folio-image-wrapper">
+                {% comment %}
+                <a data-type='image' data-id='{{ image.id }}' class="droppable_image imageDatabase" href="{{ image.get_absolute_url }}">
+                    <span class='drag_caption'>Drag image to collection</span>
+                    {% iip_img image width=width lazy=1 %}
+                </a>
+                {% endcomment %}
+                
+                {# TODO: two folio-image-wrapper! #}
+                {% iip_img image width=width lazy=1 wrap=image link=image %}
+                
+                {% if image.is_thumb_only %}
+                    <span class="private-image left" data-toggle='tooltip'
+                        data-placement='bottom' title='Full size image not available' >
+                        <span class='glyphicon glyphicon-ban-circle'></span>
+                    </span>
+                {% else %}
+                    <span class="button-bar right">
+                        <a class="btn btn-default btn-sm" href="{{ image.get_absolute_url }}?annotations=false"
+                            data-toggle='tooltip' data-placement='right' title='View image without annotations' >
+                            <span class='glyphicon glyphicon-eye-close'></span>
+                        </a>
+                    </span>
+                {% endif %}
+            </span>
+        {% endspaceless %}
+
+        <a href="{{ image.get_absolute_url }}">
+            <span class='imageDatabase_label'>
+                {% if full_label %}
+                    {{ image }}
+                {% else %}
+                    {{ image.locus }}
+                {% endif %}
+                {% if image.item_part.is_suspect %}(Suspect){% endif %}
+            </span>
+        </a>
+    </div>
+</div>

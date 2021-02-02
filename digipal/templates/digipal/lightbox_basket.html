@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load html_escape %}
+
+{% block meta_title %}Digipal Collections{% endblock %}
+{% block main %}
+<div class="page-header">
+    <h1><span class='fa fa-folder-open small'></span> Manage My Collections</h1>
+</div>
+<div class="container">
+
+    <div class="row" id='collection-toolbar'>
+
+        <div class="btn-group">
+
+            <button data-toggle='tooltip' data-container='body' title = 'Create new empty collection'  class='btn btn-default btn-sm' id='new_collection'>
+                <span class="glyphicon glyphicon-ok"></span> New
+            </button>
+
+            <button data-toggle='tooltip' data-container='body' title = 'Delete collections'  class='btn btn-default btn-sm' id='delete_collection' disabled>
+                <span class="glyphicon glyphicon-remove"></span> Delete
+            </button>
+            <button data-toggle='tooltip' data-container='body' title = 'Copy Collection'  class='btn btn-default btn-sm' id='copy_collection' disabled>
+                <span class="glyphicon glyphicon-save"></span> Copy
+            </button>
+            {% if LIGHTBOX %}
+                <button data-toggle='tooltip' data-container='body' title='Send to Digital Lightbox' class='btn btn-default btn-sm' id='to_lightbox' disabled>
+                    <span class="glyphicon glyphicon-picture"></span> Lightbox
+                </button>
+            {% endif %}
+            <button data-toggle='tooltip' data-container='body' title='Share Collection' class='btn btn-default btn-sm' id='share_collection' disabled>
+                <span class="glyphicon glyphicon-share"></span> Share
+            </button>
+
+            <label class='btn btn-default btn-sm' id='span-check-collections'>
+                <input data-toggle='tooltip' data-container='body' title='Toggle all Collections' type="checkbox" id='check_collections' />
+                <span id='counter-collections'>0</span>
+            </label>
+
+        </div>
+
+        <div class="col-md-3 pull-right">
+            <input id='filter' type="text" class="form-control" placeholder='Filter Collections' />
+        </div>
+    </div>
+
+    <div class="row">
+        <div id='container_collections' class='col-md-11 col-xs-12'>
+
+        </div>
+    </div>
+</div>
+
+<div class='loading-div'>
+    <p>Loading Data. Please wait...</p>
+    <p>
+      <img src="/static/digipal/images/ajax-loader.gif" alt = 'Loading ...' />
+    </p>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src ='/static/digipal/scripts/collections-utils.js'></script>
+    <script src ='/static/digipal/scripts/collections.js'></script>
+    <script src='//apis.google.com/js/client.js'></script>
+{% endblock %}

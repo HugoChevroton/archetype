@@ -1,0 +1,534 @@
+/*
+    GENERAL and PROJECT-INDEPENDENT CSS for the texts displayed in the
+    Text Viewer and on the Search Page
+
+    For project-specific CSS, please see tinymce_custom.css
+
+    PLEASE BE CAREFUL about side effects when editing this file,
+    other projects are basing their custom styles on the classes
+    defined below.
+*/
+
+@font-face {
+    font-family: 'junicode';
+    src: url('../junicode/Junicode.eot?#iefix') format('embedded-opentype'),  url('../junicode/Junicode.woff') format('woff'), url('../junicode/Junicode.ttf')  format('truetype'), url('../junicode/Junicode.svg#Junicode') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.mce-content-body {
+    font-family: junicode, arial, sans-serif;
+    font-size: 17px;
+}
+
+.mce-content-body p[data-dpt], .mce-content-body span[data-dpt], .mce-content-body div[data-dpt] {
+
+}
+
+/*
+TODO: Generate this CSS dynamically with Python
+Use a config file for the editor buttons/elements
+Generate a hash key from it and use it in the query string to force reload when the styles have changed
+
+*/
+
+/* -------------------------------------------------------------------------*/
+/* General Appearance for EDITING MODE (i.e. NOT preview)                   */
+/* -------------------------------------------------------------------------*/
+
+div.mce-content-body.preview {
+    padding: 8px;
+}
+
+.mce-content-body p, .mce-content-body div {
+    line-height: 1.9;
+    color: rgb(5,5,5);
+}
+
+.mce-content-body span[data-dpt] {
+    padding: 2px;
+    background-color: rgba(255,255,0,0.35);
+    margin-right: 1px;
+    /*
+    border-bottom: 2px solid;
+    border-left: 2px solid;
+    border-right: 2px solid;
+    padding: 2px;
+    */
+}
+
+.mce-content-body span[data-dpt]:before {
+    color: blue;
+    content: "???";
+    font-family: "Arial Black",Gadget,sans-serif;
+    font-size: 60%;
+    font-weight: bold;
+    margin-top: -1.4em;
+    position: absolute;
+    background-color1: white;
+    border-left1: 1px solid blue;
+    border-right1: 1px solid blue;
+    padding: 0 2px;
+}
+
+span[data-dpt] span[data-dpt]:before {
+    margin-top: -0.5em;
+    margin-left: 0.5em;
+}
+
+/*
+span[data-dpt] > span[data-dpt] {
+    padding: 1px;
+}
+*/
+
+/* Categories */
+
+.mce-content-body span[data-dpt-cat=chars],
+.mce-content-body span[data-dpt=person],
+.mce-content-body span[data-dpt=place],
+.mce-content-body span[data-dpt=datetime]
+{
+    background-color: rgba(0,255,0,0.25);
+}
+
+.mce-content-body span[data-dpt-cat=words] {
+    background-color: rgba(0,0,255,0.15);
+    margin-right: 0.2em;
+}
+
+.mce-content-body span[data-dpt=record] {
+    background-color: rgba(255, 176, 0, 0.35);
+}
+
+.mce-content-body span[data-dpt=record]:before {
+    color: OrangeRed ;
+}
+
+.mce-content-body span[data-dpt-cat=chars]:before,
+.mce-content-body span[data-dpt=person]:before,
+.mce-content-body span[data-dpt=place]:before,
+.mce-content-body span[data-dpt=datetime]:before
+{
+    color: green;
+    font-weight: bold;
+}
+
+.mce-content-body span[data-dpt=lb]:before {
+    content: '';
+}
+
+.mce-content-body span[data-dpt=lb] {
+    color: brown;
+    font-weight: bold;
+}
+
+/* Transcription & Translation */
+
+.mce-content-body span[data-dpt=abbr]:before {
+    content: "Ab";
+    background: none;
+}
+.mce-content-body span[data-dpt=exp]:before {
+    content: "Ex";
+    background: none;
+}
+
+.mce-content-body span[data-dpt=location] {
+    background-color: rgba(255,100,0,0.35);
+}
+
+.mce-content-body span[data-dpt=location]:before {
+    color: rgb(155,50,0);
+    content: "Location";
+}
+
+.mce-content-body span[data-dpt=location][data-dpt-loctype=entry]:before {
+    content: "Entry";
+}
+
+.mce-content-body span[data-dpt=location][data-dpt-loctype=locus]:before {
+    content: "Locus";
+}
+
+.mce-content-body span[data-dpt=ex]:before {
+    content: "( )";
+}
+
+.mce-content-body span[data-dpt=supplied]:before {
+    content: "\271A";
+}
+
+
+.mce-content-body span[data-dpt=gap]:before {
+    content: "Gap";
+}
+
+.mce-content-body span[data-dpt=marginal]:before {
+    content: "Margin";
+}
+
+.mce-content-body span[data-dpt=interlineation]:before {
+    content: "Int.";
+}
+
+.mce-content-body span[data-dpt=interlineation-to-margin]:before {
+    content: "Int. -> marg.";
+}
+.mce-content-body span[data-dpt=clause]:before {
+    content: "Clause";
+}
+
+.mce-content-body span[data-dpt=del]:before {
+    content: "Deleted";
+}
+
+.mce-content-body span[data-dpt=del][data-dpt-type=supplied]:before {
+    content: "Deleted (supplied)";
+}
+
+.mce-content-body span[data-dpt=person][data-dpt-type=title]:before {
+    content: "Person title";
+}
+.mce-content-body span[data-dpt=person][data-dpt-type=name]:before {
+    content: "Person name";
+}
+
+.mce-content-body span[data-dpt=place][data-dpt-type=name]:before {
+    content: "Place name";
+}
+
+.mce-content-body span[data-dpt=datetime][data-dpt-type=date]:before {
+    content: "Date";
+}
+
+.mce-content-body span[data-dpt-type=witnesses]:before {
+    content: "Witnesses";
+}
+
+.mce-content-body span[data-dpt-type=disposition]:before {
+    content: "Disposition";
+}
+
+.mce-content-body span[data-dpt-type=address]:before {
+    content: "Address";
+}
+
+.mce-content-body span[data-dpt-type=arenga]:before {
+    content: "Arenga";
+}
+
+.mce-content-body span[data-dpt-type=boundaries]:before {
+    content: "Boundaries";
+}
+
+.mce-content-body span[data-dpt-type=holding]:before {
+    content: "Holding";
+}
+
+.mce-content-body span[data-dpt-type=injunction]:before {
+    content: "Injunction";
+}
+
+.mce-content-body span[data-dpt-type=malediction]:before {
+    content: "Malediction";
+}
+
+.mce-content-body span[data-dpt-type=narration]:before {
+    content: "Narration";
+}
+
+.mce-content-body span[data-dpt-type=notification]:before {
+    content: "Notification";
+}
+
+.mce-content-body span[data-dpt-type=prohibition]:before {
+    content: "Prohibition";
+}
+
+.mce-content-body span[data-dpt-type=salutation]:before {
+    content: "Salutation";
+}
+
+.mce-content-body span[data-dpt-type=sealing]:before {
+    content: "Sealing";
+}
+
+.mce-content-body span[data-dpt-type=subscription]:before {
+    content: "Subscription";
+}
+
+.mce-content-body span[data-dpt-type=title]:before {
+    content: "Title (DEPRECATED)";
+}
+
+.mce-content-body span[data-dpt-type=intitulatio]:before {
+    content: "Intitulatio";
+}
+
+.mce-content-body span[data-dpt-type=warrandice]:before {
+    content: "Warrandice";
+}
+
+/* -------------------------------------------------------------------------*/
+/* Hand Descriptions */
+/* -------------------------------------------------------------------------*/
+
+.mce-content-body span[data-dpt=heading] {
+    text-decoration: underline;
+}
+
+.mce-content-body span[data-dpt=heading][data-dpt-level='1']:before {
+    content: "H1";
+}
+
+.mce-content-body span[data-dpt=heading][data-dpt-level='2']:before {
+    content: "H2";
+}
+
+.mce-content-body span[data-dpt=stint]:before {
+    content: "Stint";
+}
+
+.mce-content-body span[data-dpt=record][data-dpt-model=hand]:before {
+    content: "Hand";
+}
+
+.mce-content-body span[data-dpt=record][data-dpt-model=graph]:before {
+    content: "Annotation";
+}
+
+.mce-content-body span[data-dpt=record][data-dpt-model=character]:before {
+    content: "Character";
+}
+
+/* -------------------------------------------------------------------------*/
+/* TEI */
+/* -------------------------------------------------------------------------*/
+/* For DigiPal Project Hand descriptions */
+
+.mce-content-body span[data-dpt=foreign]:before {
+    content: "Foreign";
+}
+
+.mce-content-body span[data-dpt=title]:before {
+    content: "Title";
+}
+
+.mce-content-body span[data-dpt=note]:before {
+    content: "Note";
+}
+
+.mce-content-body span[data-dpt=hi]:before {
+    content: "HI ?";
+}
+
+.mce-content-body span[data-dpt=hi][data-dpt-rend=sup]:before {
+    content: "HI:sup";
+}
+
+.mce-content-body span[data-dpt=hi][data-dpt-rend=smallcap]:before {
+    content: "HI:SC";
+}
+
+/* -------------------------------------------------------------------------*/
+/* PREVIEW                                                                  */
+/* -------------------------------------------------------------------------*/
+
+.preview.mce-content-body span[data-dpt=location]:before {
+    font-family: 'junicode';
+    font-size: 100%;
+    color: rgb(5,5,5);
+    font-weight: normal;
+    position: relative;
+    content: "[";
+}
+.preview.mce-content-body span[data-dpt=location]:after {
+    content: "]";
+}
+
+.preview.mce-content-body span[data-dpt] {
+    padding: 0px;
+    margin-right: 0px;
+}
+
+.preview.mce-content-body span[data-dpt] {
+    background-color: inherit;
+}
+
+.preview.mce-content-body span[data-dpt-cat=words] {
+    background-color: transparent;
+    /*border-bottom: 1px blue solid;*/
+}
+
+.preview.mce-content-body span[data-dpt=lb] {
+    display: none;
+}
+
+.preview.mce-content-body span[data-dpt=ex] {
+    background: transparent;
+    font-style: italic;
+}
+
+/*
+.preview.mce-content-body span[data-dpt=ex]:before {
+    font-size: 100%;
+    color: rgb(5,5,5);
+    font-weight: normal;
+    content: "";
+    font-family: junicode, arial, sans-serif;
+    margin-top: 0px;
+    position: relative;
+}
+.preview.mce-content-body span[data-dpt=ex]:after {
+    font-size: 100%;
+    color: rgb(5,5,5);
+    font-weight: normal;
+    content: "";
+    position: relative;
+}
+ */
+
+.preview.mce-content-body span[data-dpt=supplied] {
+    background: transparent;
+}
+
+.preview.mce-content-body span[data-dpt=supplied]:before,
+.preview.mce-content-body span[data-dpt=gap]:before {
+    font-size: 100%;
+    color: rgb(5,5,5);
+    font-weight: normal;
+    font-family: junicode, arial, sans-serif;
+    margin-top: 0px;
+    position: relative;
+    content: "[";
+}
+.preview.mce-content-body span[data-dpt=supplied]:after,
+.preview.mce-content-body span[data-dpt=gap]:after {
+    font-size: 100%;
+    color: rgb(5,5,5);
+    font-weight: normal;
+    content: "]";
+}
+.preview.mce-content-body span[data-dpt=gap] {
+    background: transparent;
+}
+
+/*
+.preview.mce-content-body span[data-dpt=clause]:before {
+    font-size: 100%;
+    font-weight: bold;
+    content: "";
+    font-family: junicode, arial, sans-serif;
+    margin-top: 0px;
+    position: relative;
+}
+
+.preview.mce-content-body span[data-dpt=clause]:after {
+    color: blue;
+    content: "";
+    font-family: "Arial Black",Gadget,sans-serif;
+    font-size: 110%;
+    margin-left: 0.2em;
+    font-weight: normal;
+    margin-top: -0.1em;
+    position: relative;
+}
+*/
+
+.preview.mce-content-body span[data-dpt=del]:before {
+    content: "";
+}
+
+/* Works for both:
+    <del rend=underlined : scribe marked it as deleted
+    <del type=supplied : editor thinks this should have been marked as deleted
+   Hidden by default
+*/
+.preview.mce-content-body span[data-dpt=del] {
+    display: none;
+    text-decoration: line-through;
+}
+.preview.mce-content-body span[data-dpt=del][data-dpt-type=supplied] {
+    text-decoration: underline;
+}
+.preview.deleted.mce-content-body span[data-dpt=del] {
+    display: inline;
+}
+.preview.mce-content-body span[data-dpt=del][data-dpt-rend=erasure],
+.preview.mce-content-body span[data-dpt=del][data-dpt-reason=erasure] {
+    text-decoration: none;
+}
+
+/* LINE BREAKS */
+
+.preview.ms-lb-lb.mce-content-body span[data-dpt=lb][data-dpt-src=ms],
+.DEPRECATED.preview.line-breaks.mce-content-body span[data-dpt=lb] {
+    /* MS LB displayed as line breaks */
+    display: table-column;
+}
+.DEPRECATED.preview.line-breaks-as-pipes.mce-content-body span[data-dpt=lb] {
+    /* LB displayed as | */
+    display: inline;
+}
+.preview.ms-lb-pipe.mce-content-body span[data-dpt=lb][data-dpt-src=ms] {
+    /* MS LB displayed as | */
+    display: inline;
+}
+
+/* LINE BREAKS */
+.preview.mce-content-body span[data-dpt=lb][data-dpt-src=ms] {
+    /* hide LB by default */
+    display: inline;
+    visibility: hidden;
+    /* won't take space */
+    position: absolute;
+    background: none;
+}
+.preview.ms-lb-pipe.mce-content-body span[data-dpt=lb][data-dpt-src=ms] {
+    position: inherit;
+    visibility: visible;
+}
+.preview.ms-lb-lb.mce-content-body span[data-dpt=lb][data-dpt-src=ms] {
+    /* MS LB displayed as line breaks */
+    /*display: table-column;*/
+    position: inherit;
+    display: block;
+    line-height: 0;
+}
+
+.preview.ms-lb-lb.mce-content-body {
+    /* no word-wrap */
+    overflow-x: scroll;
+    white-space: nowrap;
+}
+.preview.ms-lb-lb.mce-content-body p:before {
+    /* make sure there is a space */
+    content: " ";
+}
+/* not a block anymore because we want line breaks created only by
+LB spans or by unit markers */
+.preview.ms-lb-lb.mce-content-body p {
+    display: inline;
+}
+
+/* OTHERS */
+
+.preview.mce-content-body span[data-dpt]:before,
+.preview.mce-content-body span[data-dpt]:after {
+    display:none;
+}
+
+.preview.mce-content-body span[data-dpt=location]:before,
+.preview.mce-content-body span[data-dpt=location]:after {
+    display: inline;
+}
+
+/* Used by proof-reader to identify more easily the expansions */
+.preview.highlight-expansions.mce-content-body i {
+    border-bottom: 1px dashed grey;
+}
+.preview.mce-content-body span[data-dpt=exp] i {
+    font-style: normal;
+}
+

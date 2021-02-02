@@ -1,0 +1,149 @@
+{% extends "pages/record.html" %}
+{% load pages_tags mezzanine_tags i18n %}
+{% load mezzanine_tags pagination_tags hand_filters html_escape %}
+
+{% block extra_css %}
+    {{ block.super }}
+
+    {% compress css %}
+        <link rel="stylesheet" href="{{ STATIC_URL }}css/bootstrapSwitch.css" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/jquery.notebook.min.css">
+    {% endcompress %}
+{% endblock %}
+
+
+{% block meta_title %}Hand: {{ result }}, {{ result.item_part }}{% endblock %}
+{% block record_title %}
+    Hand: {{ result }},
+    <small>{% dplink result.item_part %}{% enddplink %}</small>
+    {% include "digipal/admin_edit.html" with instance=result %}
+{% endblock %}
+
+{% block record_tabs %}
+    <li class="{% if not tabid %}active in{% endif %}">
+        <a href="{{ result.get_absolute_url }}" data-address-bar="1" data-target="#data" data-toggle="tab">Information</a>
+    </li>
+    {% if cansee.handdescription %}
+	    <li class="{% if tabid == "descriptions" %}active in{% endif %} {% if result.descriptions.count %}{% else %}disabled{% endif %}">
+	        <a href="{{ result.get_absolute_url }}descriptions/" data-address-bar="1" data-target="#descriptions" data-toggle="tab">Description</a>
+	    </li>
+    {% endif %}
+    {% if cansee.image %}
+        <li class="{% if tabid == "pages" %}active in{% endif %} {% if images.count > 0 %}{% else %}disabled{% endif %}">
+            <a href="{{ result.get_absolute_url }}pages/" data-address-bar="1" data-target="#pages" data-toggle="tab">Manuscript Images ({{ images.count }})</a>
+        </li>
+    {% endif %}
+    {% if cansee.graph %}
+        <li class="{% if tabid == "graphs" %}active in{% endif %} {% if annotations_count > 0 %}{% else %}disabled{% endif %}">
+            <a href="{{ result.get_absolute_url }}graphs/" data-address-bar="1" data-target="#graphs" data-toggle="tab">Graphs ({{ annotations_count }})</a>
+        </li>
+    {% endif %}
+{% endblock %}
+
+{% block details %}
+    <div class='tabbable'>
+        <div id='record-tab-content' class='tab-content'>
+            <div class='tab-pane fade {% if not tabid %}active in{% endif %}' id='data'>
+
+                <dl class="dl-horizontal bs">
+                    <dt>Name</dt>
+                    <dd>{{ result.label }}</dd>
+                    <dt>Manuscript</dt>
+                    <dd>{% dplink result.item_part %}{% enddplink %}</dd>
+                    {% if result.locus %}
+                        <dt>Locus</dt>
+                        <dd>{{ result.locus }}</dd>
+                    {% endif %}
+                    <dt>Script</dt>
+                    <dd>
+                        {% if result.script %}
+                            {{ result.script }}
+                        {% else %}
+                            Unspecified
+                        {% endif %}
+                    </dd>
+                    <dt>Scribe</dt>
+                    <dd>
+                        {% if result.scribe %}
+                            {% dplink result.scribe %}{% enddplink %}
+                        {% else %}
+                            Unspecified
+                        {% endif %}
+                    </dd>
+                    <dt>Date</dt>
+                    <dd>
+                        {{ result.assigned_date }}
+                    </dd>
+                    <dt>Place</dt>
+                    <dd>
+                        {{ result.assigned_place }}
+                    </dd>
+                    {% if result.scragg or result.ker %}
+                        <dt>Catalogue Number</dt>
+                        {% if result.scragg %}
+                            <dd>
+                                Scragg {{ result.scragg }}
+                            </dd>
+                        {% endif %}
+                        {% if result.ker %}
+                            <dd>
+                                Ker {{ result.ker }}
+                            </dd>
+                        {% endif %}
+                    {% endif %}
+                </dl>
+            </div>
+
+            {% if cansee.handdescription %}
+            <div class='tab-pane fade {% if tabid == "descriptions" %}active in{% endif %}' id='descriptions'>
+                {% for description in result.descriptions.all %}
+                    <h3>
+                        {% if description.label %}{{description.label}} - {% endif %}
+                        {{ description.source.get_display_reference }}
+                    </h3>
+                    <p>
+                        {% filter tag_phrase_terms:terms %}
+                            {{ description|hand_description:request }}
+                        {% endfilter %}
+                    </p>
+                {% empty %}
+                    {% include "digipal/empty_tab.html" with type="description" %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if cansee.image %}
+                {% include "pages/tab_images.html" with images=images full_label=1 %}
+            {% endif %}
+
+            {% include "digipal/add_to_collection.html" %}
+
+            {% if cansee.graph %}
+                <div class='tab-pane fade {% if tabid == "graphs" %}active in{% endif %}' id='graphs'>
+                    {% include "digipal/annotations.html" %}
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    
+    <script src='{{ STATIC_URL }}digipal/scripts/drag_to_lightbox.js'></script>
+    {% if can_edit %}
+        <script src="{{ STATIC_URL }}js/chosen.jquery.js"></script>
+        <script src="{{ STATIC_URL }}digipal/scripts/api.digipal.js"></script>
+        <script src="{{ STATIC_URL }}digipal/scripts/update_dialog.js"></script>
+        <script src="{{ STATIC_URL }}digipal/scripts/dialog.js"></script>
+        <script src="{{ STATIC_URL }}digipal/scripts/dialog-db-functions.js"></script>
+        <script src="{{ STATIC_URL }}scripts/bootstrapSwitch.js"></script>
+        <script src='{{ STATIC_URL }}digipal/scripts/annotations-cache.js'></script>
+        <script type="text/javascript" src='{{ STATIC_URL }}js/jquery.notebook.min.js'></script>
+        <script src='{{ STATIC_URL }}digipal/scripts/edit_graphs_search.js'></script>
+    {% else %}
+        <script src='{{ STATIC_URL }}digipal/scripts/allographs-public-user.js'></script>
+    {% endif %}
+{% endblock %}

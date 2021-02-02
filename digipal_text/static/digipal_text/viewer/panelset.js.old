@@ -1,0 +1,1943 @@
+//////////////////////////////////////////////////////////////////////
+//
+// The Text Viewer/Editor client application
+//
+// PanelSet is a frame made of multiple views on a document (ItemPart). 
+// Each view is managed by a separate Panel object.
+// Panel subclasses deal with specific types of contents:
+// e.g. PanelText for XML, PanelImage for tiled high res image, etc.
+//
+// TODO: move each class into separate source file. 
+//
+//////////////////////////////////////////////////////////////////////
+(function(TextViewer, $, undefined) {
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Located
+    //
+    // For location aware objects (e.g. Panel)
+    // Manages the internal location and the associated UI (drop downs)
+    // A position in a document is made of at least two parts:
+    // (locationType, location), e.g. ('locus', '2r') or ('entry', '2a3')
+    // An address is a string representation of a complete position,
+    // e.g. locus/2r/, or translation/locus/2r/
+    //
+    //////////////////////////////////////////////////////////////////////
+    var Located = TextViewer.Located = function($root) {
+        var me = this;
+
+        this.resetSubLocation();
+
+        this.$locationTypes = $root.find('.dropdown-location-type');
+        this.$locationSelect = $root.find('select[name=location]');
+
+        upgrade_selects($root);
+
+        this.$locationTypes.dpbsdropdown({
+            onSelect: function($el, key) { me.onSelectLocationType(key); },
+        });
+
+        this.$locationSelect.on('change', function() {
+            me.onLocationChanged();
+        });
+        
+        $root.find('.btn-page-nav').on('click', function() {
+            me.onNextPage($(this).hasClass('btn-page-previous') ? -1 : +1);
+        });
+        
+    };
+    
+    Located.prototype.onNextPage = function(offset) {
+        this.setLocationTypeAndLocation(this.getLocationType(), this.getLocationWithOffset(null, null, offset));
+    }
+
+    Located.prototype.onLocationChanged = function() {
+        // to be overridden
+    };
+
+    // Returns the selected Location Type from the drop down
+    Located.prototype.getLocationType = function() {
+        var ret = 'default';
+        if (this.$locationTypes.closest('.dphidden,.dpunhidden').hasClass('dpunhidden')) {
+            ret = this.$locationTypes.dpbsdropdown('getOption');
+        }
+        return ret;
+    };
+
+    // Returns the selected Location from the location drop down
+    // e.g. '2r'
+    // Returns empty string if not found
+    // This is the full value, so it may include the offset, e.g. 'location+1'
+    Located.prototype.getLocation = function() {
+        var ret = '';
+        if (this.$locationSelect.closest('.dphidden,.dpunhidden').hasClass('dpunhidden')) {
+            ret = this.$locationSelect.val();
+        }
+        return ret;
+    };
+
+    // e.g. ('locus', '2r', 2) => '3r'
+    // any argument can be null, default values are (current LocType, current Location, 0)
+    Located.prototype.getLocationWithOffset = function(locationType, location, offset) {
+        var ret = location || this.getLocation();
+        
+        locationType = locationType || this.getLocationType();
+        
+        var locations = this.locations[locationType];
+        var idx = locations.indexOf(ret);
+        idx += (offset || 0);
+        if (idx >= 0 || idx < locations.length) {
+            ret = locations[idx];
+        };
+        return ret;
+    }
+    
+    // Same as getLocation() but without the offset (if any)
+    // E.g. if the location type is 'sync' and location is 'location+1'
+    // the function returns 'location'
+    Located.prototype.getLocationWithoutOffset = function() {
+        var info = this.getLocationParts();
+        return info.location;
+    };
+
+    // Returns the location without offset and the offset
+    // E.g. if the location type is 'sync' and location is 'X+1'
+    // the function returns {'location': 'X', 'offset': 1}
+    Located.prototype.getLocationParts = function() {
+        // if location is 'X+1', returns {location: 'X', offset: 1}
+        var ret = {location: this.getLocation(), offset: 0};
+        
+        if (ret.location) {
+            var offset = ret.location.match(/[+-]\d+$/g);
+            if (offset) {
+                offset = offset[0];
+                ret.offset = parseInt(offset);
+                ret.location = ret.location.substring(0, ret.location.length - offset.length);
+            }
+        }
+        
+        return ret;
+    }
+
+    Located.prototype.setLocationTypeAndLocation = function(locationType, location) {
+        // this may trigger a content load
+        if (this.getLocationType() !== 'sync') {
+            this.$locationTypes.dpbsdropdown('setOption', locationType);
+            if (this.getLocation() != location) {
+                this.$locationSelect.val(location);
+                this.$locationSelect.trigger('liszt:updated');
+                this.$locationSelect.trigger('change');
+            }
+        }
+    };
+
+    Located.prototype.updateLocations = function(locations) {
+        // Update the location drop downs from a list of locations
+        // received from the server.
+
+        if (locations) {
+            var empty = true;
+            for (var k in locations) {
+                empty = false;
+                break;
+            }
+            if (!empty) {
+                if (this.$contentTypes) {
+                    locations.sync = [['location', 'Top Location'], ['location+1', 'Top location (next)'], ['location-1', 'Top location (previous)']];
+                    locations.sync = locations.sync.concat(this.$contentTypes.dpbsdropdown('getOptions'));
+//                     locations.sync = locations.sync.concat(this.panelSet.panels.map(function(panel) {
+//                         return panel.contentType;
+//                     }));
+                }
+
+                // save the locations
+                this.locations = locations;
+
+                // only show the available location types
+                var locationTypes = [];
+                for (var j in locations) {
+                    locationTypes.push(j);
+                }
+
+                // Note that we only SHOW the given location types, we don't
+                // add new entries in the drop down
+                this.$locationTypes.dpbsdropdown('showOptions', locationTypes);
+                this.$locationTypes.dpbsdropdown('setOption', locationTypes[0]);
+                unhide(this.$locationTypes, 1);
+            } else {
+                // save the locations
+                this.locations = locations;
+            }
+        }
+    };
+
+    Located.prototype.onSelectLocationType = function(locationType) {
+        // update the list of locations
+        var me = this;
+        var htmlstr = '';
+        if (this.locations && this.locations[locationType]) {
+            $(this.locations[locationType]).each(function (index, value) {
+                // we accept either a list of string or a list or [value,label]
+                var val = value;
+                var label = value;
+                if (value.sort) {
+                    val = value[0];
+                    label = value[1];
+                }
+                htmlstr += '<option value="'+val+'">'+label+'</option>';
+            });
+        }
+        this.$locationSelect.html(htmlstr);
+        // ?? not a BS DD, just a select
+        this.$locationSelect.trigger('liszt:updated');
+        //this.$locationSelect.closest('.dphidden').toggle(htmlstr ? true : false);
+        unhide(this.$locationSelect, htmlstr ? true : false);
+
+        this.$locationSelect.closest('.dphidden,.dpunhidden').toggleClass('dpauto-hide', (this.getLocationType() === 'sync'));
+        this.$locationTypes.closest('.dphidden,.dpunhidden').toggleClass('dpauto-hide', (this.getLocationType() === 'sync'));
+
+        //             if (!htmlstr) { this.loadContent(); }
+        //             else
+        //             {
+        //                 // force a load bc the location has changed
+        //                 // This will create infinite event recursion on startup:
+        //                 // this.loadContent();
+        //                 // this.loadContent(false, this.getContentAddress(locationType));
+        //                 window.setTimeout(function() { me.$locationSelect.trigger('change'); }, 0);
+        //             };
+        // Try to reload bc the location has changed.
+        // Note that no request is sent if address hasn't changed.
+        // This will create infinite event recursion on startup:
+        // this.loadContent();
+        // this.loadContent(false, this.getContentAddress(locationType));
+        window.setTimeout(function() { me.$locationSelect.trigger('change'); }, 0);
+    };
+
+    // SubLocation: a reference within the content
+    // e.g. entry 1a1 within page 1r
+    // e.g. 'address' clause within whole text or entry 1a1
+    // it is a location at a deeper level than the address
+    // ALWAYS return a NON EMPTY array
+    Located.prototype.getSubLocation = function() {
+        var ret = this.subLocation;
+
+        if (ret.length <= 0) {
+            ret = this.getSubLocationFromLocaton();
+        }
+
+        return ret;
+    };
+
+    // Can return an empty array if the sublocation is not more specific
+    // than the location
+    Located.prototype.getSubLocationUnresolved = function() {
+        return this.subLocation;
+    }
+
+    Located.prototype.getSubLocationFromLocaton = function() {
+        // create a subLocation from the location
+        return [['','location'], ['loctype', this.getLocationType()], ['@text', this.getLocation()]];
+    };
+
+    Located.prototype.setSubLocation = function(subLocation) {
+        // clone and set the location
+        var subLocationOld = JSON.stringify(this.subLocation || []);
+        var subLocationNew = JSON.stringify(subLocation || []);
+
+        if (subLocationOld != subLocationNew) {
+            this.resetSubLocation(subLocation);
+
+            if (this.panelSet) {
+                // state has changed
+                this.panelSet.onPanelStateChanged(this);
+                // dispatch the element we are on
+                this.panelSet.syncWithPanel(this);
+            }
+        }
+    };
+
+    Located.prototype.resetSubLocation = function(subLocation) {
+        this.subLocation = JSON.parse(JSON.stringify(subLocation || []));
+    };
+
+    // TO BE OVERRIDEN
+    // Move to a sublocation
+    // if successful:
+    //  next time getSubLocation is called, the sublocation should be returned
+    //  return true
+    Located.prototype.moveToSubLocation = function(subLocation) {
+        var ret = true;
+        this.setSubLocation(subLocation);
+        return true;
+    };
+    
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // PanelSet
+    //
+    // Represents and manages a set of Panels.
+    // It deals with adding/removing panels to the frame, syncing their 
+    // locations, reflecting state changes into the browser address bar,
+    // managing the visual arrangement of the panels on screen.
+    //
+    //////////////////////////////////////////////////////////////////////
+    var PanelSet = TextViewer.PanelSet = function($root) {
+
+        this.uuid = window.dputils.get_uuid();
+        this.panels = [];
+        this.$root = $root;
+        this.$panelset = null;
+        this.layout = null;
+        this.$messageBox = null;
+        this.isReady = false;
+        this.panelSet = this;
+
+        this.registerPanel = function(panel) {
+            if (!panel) return;
+            this.panels.push(panel);
+            panel.panelSet = this;
+            panel.setItemPartid(this.itemPartid);
+            if (this.isReady) {
+                panel.componentIsReady('panelset');
+            }
+        };
+
+        this.unRegisterPanel = function(panel) {
+            for (var i in this.panels) {
+                if (this.panels[i] == panel) {
+                    this.panels.splice(i, 1);
+                }
+            }
+        };
+
+        this.syncWithPanel = function(panel) {
+            // sync other panels with <panel>
+            this.onPanelContentLoaded(panel, panel.getLocationType(), panel.getLocation());
+        };
+
+        this.onPanelContentLoaded = function(panel, locationType, location) {
+            this.syncWith(panel.uuid, panel.getContentType(), locationType, location, panel.getSubLocation());
+        };
+
+        this.syncWith = function(panelUUID, contentType, locationType, location, subLocation) {
+            // sync other panels with <panel>
+            for (var i in this.panels) {
+                this.panels[i].syncLocationWith(panelUUID, contentType, locationType, location, subLocation);
+            }
+        };
+
+        this.syncPanel = function(panel) {
+            // sync the given panel (with others)
+            for (var i in this.panels) {
+                panel.syncLocationWith(this.panels[i].uuid, this.panels[i].getContentType(), this.panels[i].getLocationType(), this.panels[i].getLocation(), this.panels[i].getSubLocation());
+            }
+        };
+
+        this.getBaseAddress = function() {
+            return '/digipal/manuscripts/' + this.itemPartid + '/texts/';
+        };
+
+        this.onPanelStateChanged = function(panel) {
+            var state = panel.getState();
+            var key = panel.getPanelKey();
+
+            // update the URL
+            var url = window.location.href;
+            // add qs if none yet
+            if (url.indexOf('?') == -1) {
+                if (url.indexOf('#') == -1) {
+                    url = url + '?';
+                } else {
+                    url = url.replace('#', '?#');
+                }
+            }
+            // add qs param if none yet
+            if (url.indexOf(key+'=') == -1) {
+                url = url.replace('?', '?'+key+'='+'&');
+            }
+            // replace existing query string param
+            url = url.replace(new RegExp(key+"=[^&#]*"), key+'='+encodeURI(state));
+            window.history.replaceState('', window.title, url);
+            // share last URL with other text viewers 
+            localStorage.textViewer = JSON.stringify({
+                'url': window.location.href,
+                'uuid': this.uuid,
+                'panelUUID': panel.uuid,
+                'contentType': panel.getContentType(),
+                'address': panel.loadedAddress,
+            });
+        };
+
+        this.setStateFromUrl = function(defaultState) {
+            // we merge the defaultState with the state from the Query String
+            var args = $.extend(this.getQSArgs(defaultState), this.getQSArgs(window.location.href, true));
+            var state = Object.keys(args).reduce(function(pv,cv) {
+                return pv + cv + '=' + args[cv] + '&';
+            }, '?');
+            this.setState(state);
+        };
+
+        this.getQSArgs = function(queryString, decode) {
+            // in: '?k1=v1&k2=v2'
+            // out: {'k1': 'v1', 'k2': 'v2'}
+            var ret = {};
+            if (queryString && queryString.length) {
+                var match = (queryString.match(/(&|\?)(\w+)=([^&#]+)/g));
+                if (match) {
+                    match.map(function(v) {
+                        var arg = v.replace(/[\?#&]/g, '').split('=');
+                        ret[arg[0]] = urldecode(arg[1]);
+                        return '';
+                    });
+                }
+            }
+            return ret;
+        };
+
+        this.setState = function(state) {
+            // '?center=transcription/default/&east=translation/default/&north=image/default/';
+            var me = this;
+            if (state && state.length) {
+                var args = (state.match(/(&|\?)(\w+)=([^&#]+)/g)).map(function(v) { return v.replace(/[\?#&]/g, '').split('='); });
+                args.map(function(arg) {
+                    var key = arg[0];
+                    var panelState = arg[1];
+                    me.registerPanel(TextViewer.Panel.createFromState(panelState, key));
+                });
+            }
+        };
+
+        this.setItemPartid = function(itemPartid) {
+            // e.g. '/itemparts/1/'
+            this.itemPartid = itemPartid;
+        };
+
+        this.setLayout = function($panelset) {
+            this.$panelset = $panelset;
+            var me = this;
+            var resize = function() { me._resizePanels(); };
+            this.layout = $panelset.layout({
+                applyDefaultStyles: true,
+                closable: true,
+                resizable: true,
+                slidable: true,
+                livePaneResizing: true,
+                onopen: resize,
+                onclose: resize,
+                onshow: resize,
+                onhide: resize,
+                onresize: resize
+            });
+        };
+
+        // Change the relative size of the panel
+        // panelLocation: west|north|south|east
+        // size: a ratio. e.g. 1/2.0 for half the full length
+        this.setPanelSize = function(panelLocation, size) {
+            if (size === 0) {
+                this.layout.close(panelLocation);
+            } else {
+                var fullLength = this.$panelset[(panelLocation == 'east' || panelLocation == 'west') ? 'width': 'height']();
+                this.layout.open(panelLocation);
+                this.layout.sizePane(panelLocation, size * fullLength);
+            }
+        };
+
+        this.setMessageBox = function($messageBox) {
+            this.$messageBox = $messageBox;
+        };
+
+        this.setExpandButton = function($expandButton) {
+            this.$expandButton = $expandButton;
+            var me = this;
+            this.$expandButton.on('click', function() { me.$panelset.css('height', $(window).height()); return true; });
+        };
+
+        this._resize = function(refreshLayout) {
+            // resize the div to the available height on the browser viewport
+            //var height = window.dputils.get_elastic_height(this.$root);
+            //this.$panelset.css('height', Math.floor(height - this.$messageBox.outerHeight(true)));
+            var height = window.dputils.get_elastic_height(this.$panelset, 10, 0, 1);
+            this.$panelset.css('height', height);
+            this.$panelset.css('max-height', height);
+
+            if (refreshLayout && this.layout) {
+                this.layout.resizeAll();
+            }
+
+            this._resizePanels();
+        };
+
+        this._resizePanels = function() {
+            for (var i in this.panels) {
+                this.panels[i].onResize();
+            }
+        };
+
+        this.getPanelAddressParts = function(address) {
+            // IN: '/digipal/manuscripts/1/texts/location/locus/290r/'
+            //OUT: {contentType: location, locationType: locus, location: 290r}
+            ret = {contentType: '', locationType: 'locus', location: '1r'};
+            
+            var baseAddress = this.getBaseAddress();
+            if (address.substring(0, baseAddress.length) !== baseAddress) return ret;
+            address = address.substring(baseAddress.length);
+            // 'translation/locus/271r/'
+            var parts = address.split('/');
+            if (parts.length == 4) {
+                ret.contentType = parts[0];
+                ret.locationType = parts[1];
+                ret.location = parts[2];
+            }
+            
+            return ret;
+        };
+
+        this.initEvents = function() {
+
+            this._resize(true);
+            var me = this;
+
+            $(window).resize(function() {
+                me._resize();
+                });
+            $(window).scroll(function() {
+                me._resize(true);
+                });
+            
+            window.addEventListener('storage', function(event) {
+                // Syncing location following a change made in another browser window
+                if (event.key !== 'textViewer') return;
+                var data = JSON.parse(event.newValue);
+                if (data.uuid === me.uuid) return;
+                var baseAddress = me.getBaseAddress();
+                if (data.address.substring(0, baseAddress.length) !== baseAddress) return;
+                
+                parts = me.getPanelAddressParts(data.address);
+                
+                if (parts.contentType) {
+                    me.syncWith(data.panelUUID, data.contentType, parts.locationType, parts.location);
+                }
+            });
+        };
+
+        this.ready = function() {
+            for (var i in this.panels) {
+                this.panels[i].componentIsReady('panelset');
+            }
+            this.isReady = true;
+            this.initEvents();
+        };
+
+    };
+
+    /////////////////////////////////////////////////////////////////////////
+    //
+    // Panel: an ABSTRACT Panel managed by the PanelSet
+    //
+    // This is the base class for all specific panel types (e.g. text, image).
+    // It provides some basic behaviour for auto-resizing, loading/saving content.
+    // It displays and manages: a tool bar at the top, content in the middle and 
+    // status bar at the bottom.
+    // The content can be anything and specifics are dealt with subclasses.
+    //
+    /////////////////////////////////////////////////////////////////////////
+    var Panel = TextViewer.Panel = function($root, contentType, panelType, options) {
+        this.uuid = window.dputils.get_uuid();
+
+        this.$root = $root;
+        this.$content = $('<div></div>');
+
+        this.loadOptions = options || {};
+
+        // we set a ref from the root element to its panel
+        // so we can clean up things properly when the panel is replaced
+        if ($root[0].textViewerPanel) {
+            $root[0].textViewerPanel.onDestroy();
+        }
+        this.$root[0].textViewerPanel = this;
+
+        this.panelType = panelType;
+        this.contentType = contentType;
+
+        this.panelSet = null;
+
+        // The address of the last successfully loaded content. 
+        // e.g. /digipal/manuscripts/1/texts/location/locus/2r/
+        //
+        // Note that this may be more specific than locationType and
+        // location drop downs. For instance if the panel is synced
+        // we could have locationType=sync, location=image but the
+        // loadedAddress is the actual address of the content.
+        //
+        // It is CRUCIAL that this is null when the displayed content
+        // doesn't reflect the location drop downs (e.g. not loaded yet
+        // being loaded, error loading) otherwise it may cause data
+        // loss on the server because of the automated save.
+        this.loadedAddress = null;
+
+        this.createUserInterface();
+        
+        var me = this;
+
+        // Enabled location selectors
+        Located.call(this, $root);
+
+        // METHODS
+
+        this.callApi = function(title, url, onSuccess, requestData, synced) {
+            var me = this;
+            var onComplete = function(jqXHR, textStatus) {
+                if (textStatus !== 'success') {
+                    me.setMessage('Error while '+title+' (status: '+textStatus+')', 'error');
+                }
+            };
+            var onSuccessWrapper = function(data, textStatus, jqXHR) {
+                data.status = data.status || 'success';
+                data.message = data.message || 'done ('+title+').';
+                if (data.locations) {
+                    me.updateLocations(data.locations);
+                }
+                if (data.status === 'success') {
+                    onSuccess(data, textStatus, jqXHR);
+                }
+                me.setMessage(data.message, data.status);
+            };
+            this.setMessage(title+'...', 'info');
+            var ret = TextViewer.callApi(url, onSuccessWrapper, onComplete, requestData, synced);
+            return ret;
+        };
+
+        this.onDestroy = function() {
+            // destructor, the place to remove any resource and detach event handlers
+            this.panelSet.unRegisterPanel(this);
+            // prevent ghost saves (e.g. detached panel still listens to unload events)
+            this.setNotDirty();
+            this.loadedAddress = null;
+        };
+
+        this.setMessage = function(message, status) {
+            // status = success|info|warning|error
+            if (this.$statusBar) {
+                this.$statusBar.find('.message').html(message).removeClass('message-success message-info message-warning message-error').addClass('message-'+status);
+                this.$statusBar.find('.time').html(TextViewer.getStrFromTime(new Date()));
+            }
+        };
+
+        this.unreadyComponents = ['panelset'];
+
+        this.componentIsReady = function(component) {
+            // we remove the component from the waiting list
+            var index = $.inArray(component, this.unreadyComponents);
+            if (index > -1) {
+                this.unreadyComponents.splice(index, 1);
+            }
+            // if the waiting list is empty, we call _ready()
+            if (this.unreadyComponents.length === 0) {
+                this._ready();
+            }
+        };
+
+        this._ready = function() {
+            var me = this;
+
+            this.updateEditingModeIcon();
+
+            if (this.$contentTypes) {
+                this.$contentTypes.dpbsdropdown({
+                    onSelect: function($el, key, $a) {
+                        // the user has selected another view/content type -> we replace this panel
+                        me.panelSet.registerPanel(new TextViewer['Panel'+$a.data('class')](me.$root, key));
+                    },
+                });
+                this.$contentTypes.dpbsdropdown('setOption', this.contentType, true);
+            }
+
+            this.loadContent(true, this.loadOptions.contentAddress ?  this.panelSet.getBaseAddress() + this.loadOptions.contentAddress : undefined);
+
+            this.onResize();
+
+            if (this.$statusSelect) {
+                this.$statusSelect.on('change', function() {
+                    // digipal/api/textcontentxml/?_text_content__item_part__id=1628&_text_content__type__slug=translation&status__id=7
+                    var ret = TextViewer.callApi('/digipal/api/textcontentxml/', null, null, {
+                        'method': 'PUT',
+                        '_text_content__item_part__id': me.itemPartid,
+                        '_text_content__type__slug': me.getContentType(),
+                        'status__id': $(this).val(),
+                        '@select': 'id'
+                    });
+                });
+            }
+
+            if (this.$presentationOptions) {
+                this.$presentationOptions.on('change', 'input[type=checkbox]', function() {
+                    me.applyPresentationOptions();
+                    me.panelSet.onPanelStateChanged(me);
+                });
+            }
+
+            if (this.$downloadButton) {
+                unhide(this.$downloadButton, this.isDownloadable());
+                this.$downloadButton.on('click', function() {
+                    // http://localhost/digipal/manuscripts/1/texts/codicology/whole/?jx=1&load_locations=0&ds=&format=html&ds=locus
+                    var url = me.getContentAddress('whole', '');
+                    url += '?ds=' + (me.getListFromPresentationOptions()).join(',');
+                    window.open(url, '_blank');
+                });
+            }
+
+            if (this.$linkerText) {
+                this.$linkerText.on('change', function() {
+                    me.onLinkerTextChanged();
+                });
+            }
+
+            if (this.$content) {
+                setInterval(function() {
+                    me.saveContent();
+                }, 2500);
+            }
+        };
+
+        this.syncLocationWith = function(panelUUID, contentType, locationType, location, subLocation) {
+            if ((this.getLocationType() === 'sync' && (this.getLocationWithoutOffset().toLowerCase() == contentType.toLowerCase())) ||
+                (contentType.toLowerCase() === 'location' && contentType.toLowerCase() === this.getContentType().toLowerCase())) {
+                if (panelUUID != this.uuid) {
+                    this.loadContent(false, this.getContentAddress(locationType, location), subLocation);
+                }
+            }
+        };
+
+        /*
+         * Loading and saving
+         *
+         * General rules about when the content should be saved:
+         *      at regular interval (this class)
+         *      when the editor loses the focus (subclass)
+         *      before the window/tab/document is closed (subclass)
+         * but
+         *      only if the content has been changed (this.isDirty() and this.getContentHash())
+         *      only if the content has been loaded properly (this.loadedAddress <> null)
+         */
+
+        /* LOADING CONTENT */
+
+        this.loadContent = function(loadLocations, address, subLocation) {
+            subLocation = subLocation || [];
+
+            if (!address && (this.getLocationType() == 'sync')) {
+                this.panelSet.syncPanel(this);
+                return;
+            }
+
+            address = address || this.getContentAddress();
+
+            if (this.loadedAddress != address || !this.moveToSubLocation(subLocation)) {
+                this.setValid(false);
+                // make sure no saving happens from now on
+                // until the content is loaded
+                this.loadedAddress = null;
+                this.loadContentCustom(loadLocations, address, subLocation);
+            }
+        };
+
+        /* SAVING CONTENT */
+
+        this.saveContent = function(options) {
+            options = options || {};
+            if (this.loadedAddress && (this.isDirty() || options.forceSave)) {
+                //console.log('SAVE '+this.loadedAddress);
+                this.setNotDirty();
+                this.saveContentCustom(options);
+            }
+        };
+
+        this.saveContentCustom = function(options) {
+            // NEVER CALL THIS FUNCTION DIRECTLY
+            // ONLY saveContent() can call it
+        };
+
+        this.onContentSaved = function(data) {
+        };
+
+        /* -------------- */
+
+        this.setValid = function(isValid) {
+            // tells us if the content is invalid
+            // if it is invalid we have to block editing
+            // visually inform the user the content is not valid.
+            var $mask = this.$root.find('.mask');
+            if ($mask.length === 0) {
+                // TODO: move this HTML to the template.
+                // Not good practice to create it with JS
+                this.$content.prepend('<div class="mask"></div>');
+                $mask = this.$root.find('.mask');
+            }
+
+            $mask.css('height', isValid ? '0' : '100%');
+        };
+
+        this.isDirty = function() {
+            var ret = (this.getContentHash() !== this.lastSavedHash);
+            return ret;
+        };
+
+        this.setNotDirty = function() {
+            this.lastSavedHash = this.getContentHash();
+        };
+
+        this.setDirty = function() {
+            var d = new Date();
+            this.lastSavedHash = (d.toLocaleTimeString() + d.getMilliseconds());
+        };
+
+        this.getContentHash = function() {
+            var ret = null;
+            return ret;
+            //return ret.length + ret;
+        };
+
+        // Content Status
+        this.setStatusSelect = function(contentStatus) {
+            if (contentStatus) {
+                // select the given status in the drop down
+                this.$statusSelect.val(contentStatus);
+                this.$statusSelect.trigger('liszt:updated');
+            }
+            // hide (chosen) select if no status supplied
+            //this.$statusSelect.closest('.dphidden').toggle(!!contentStatus);
+            unhide(this.$statusSelect, !!contentStatus);
+        };
+
+        this.setPresentationOptions = function(presentationOptions) {
+            var $pres = this.$presentationOptions;
+            if (presentationOptions) {
+                //var myData = [{id: 1, label: "Test" }];
+                var options = presentationOptions.map(function(v, i) {return {id: v[0], label: v[1]};});
+                if (!$pres.data().hasOwnProperty('dropdownCheckbox')) {
+                    $pres.dropdownCheckbox({
+                        data: options,
+                        title: 'Display',
+                        btnClass: 'btn btn-default btn-sm'
+                    });
+                    $pres.find('button').html('<span class="glyphicon glyphicon-eye-open"></span>&nbsp;<span class="caret"></span>');
+                    $pres.on('mouseenter mouseleave', function($event) {
+                        $pres.find('.dropdown-checkbox-content').toggle($event.type === 'mouseenter');
+                    });
+
+                }
+            }
+            // hide (chosen) select if no status supplied
+            //$pres.closest('.dphidden').toggle(!!presentationOptions && (presentationOptions.length > 0));
+            unhide($pres, !!presentationOptions && (presentationOptions.length > 0));
+        };
+
+        // Address / Locations
+
+        this.setItemPartid = function(itemPartid) {
+            // e.g. '/itemparts/1/'
+            this.itemPartid = itemPartid;
+        };
+
+        this.getContentAddress = function(locationType, location) {
+            return this.panelSet.getBaseAddress() + this.getContentAddressRelative(locationType, location);
+        };
+
+        this.getContentAddressRelative = function(locationType, location) {
+            return this.getContentType() + '/' + (locationType || this.getLocationType()) + '/' + encodeURIComponent((location === undefined) ? this.getLocation() : location) + '/';
+        };
+
+        this.getContentType = function() {
+            return this.contentType;
+        };
+
+        this.getEditingMode = function() {
+            // returns:
+            //  undefined: no edit mode at all
+            //  true: editing
+            //  false: not editing
+            return undefined;
+        };
+
+        this.updateEditingModeIcon = function() {
+            if (this.$toggleEdit) {
+                var mode = this.getEditingMode();
+
+                //this.$toggleEdit.toggleClass('dphidden', !((mode === true) || (mode === false)));
+                unhide(this.$toggleEdit, ((mode === true) || (mode === false)));
+
+                this.$toggleEdit.toggleClass('active', (mode === true));
+
+                this.$toggleEdit.attr('title', (mode === true) ? 'Preview the text' : 'Edit the text');
+
+                this.$toggleEdit.tooltip();
+
+                var me = this;
+                this.$toggleEdit.on('click', function() {
+                    var options = {
+                        contentAddress: me.getContentAddressRelative()
+                    };
+                    me.panelSet.registerPanel(new TextViewer['PanelText'+(mode ? '' : 'Write')](me.$root, me.getContentType(), options));
+                    return false;
+                });
+            }
+        };
+
+    };
+
+    Panel.prototype = Object.create(Located.prototype);
+
+    Panel.prototype.createUserInterface = function() {
+        // clone the panel template
+        var $panelHtml = $('#text-viewer-panel').clone();
+        $panelHtml.removeAttr('id');
+        $panelHtml.addClass('ct-'+this.contentType);
+        $panelHtml.addClass('pt-'+this.panelType.toLowerCase());
+        this.$root.html($panelHtml);
+
+        // We create bindings for all the html controls on the panel
+        this.$contentTypes = this.$root.find('.dropdown-content-type');
+
+        this.$linker = this.$root.find('.linker');
+        this.$linkerImage = this.$linker.find('.linker-image');
+        this.$linkerText = this.$linker.find('select[name=linker-text]');
+
+        upgrade_selects(this.$root);
+
+        this.$content = this.$root.find('.panel-content');
+        this.$statusBar = this.$root.find('.status-bar');
+
+        this.$statusSelect = this.$root.find('select[name=status]');
+        this.$presentationOptions = this.$root.find('.presentation-options');
+
+        this.$toggleEdit = this.$root.find('.toggle-edit');
+
+        this.$downloadButton = this.$root.find('.action-download');
+    }
+
+    Panel.prototype.loadContentCustom = function(loadLocations, address, subLocation) {
+        // NEVER CALL THIS FUNCTION DIRECTLY
+        // ONLY loadContent() can call it
+        throw "loadContentCustom() must be overridden in the concrete class"; 
+        this.$content.html('Generic Panel Content');
+        this.onContentLoaded();
+    };
+
+    Panel.prototype.onLinkerTextChanged = function() {
+    };
+
+    Panel.prototype.onContentLoaded = function(data) {
+        //this.setMessage('Content loaded.', 'success');
+        this.loadedAddress = this.getContentAddress(data.location_type, data.location);
+        this.setNotDirty();
+        this.setValid(true);
+
+        // reset the sublocation because the content has changed
+        this.resetSubLocation();
+
+        // update the location drop downs
+        this.setLocationTypeAndLocation(data.location_type, data.location);
+
+        // update the status
+        this.setStatusSelect(data.content_status);
+
+        // update presentation options
+        this.setPresentationOptions(data.presentation_options);
+        this.applyPresentationOptions();
+
+        // send signal to other panels so they can sync themselves
+        this.panelSet.onPanelContentLoaded(this, data.location_type, data.location);
+
+        //
+        if (this.loadOptions && this.loadOptions.stateDict) {
+            this.setStateDict(this.loadOptions.stateDict);
+            this.loadOptions.stateDict = null;
+        }
+
+        // move to the new sublocation
+        if (data.sub_location) this.moveToSubLocation(data.sub_location);
+
+        // asks PanelSet to update URL
+        this.panelSet.onPanelStateChanged(this);
+    };
+
+    Panel.prototype.onResize = function () {
+        if (this.$statusBar) {
+            // resize content to take the remaining height in the panel
+            var height = Math.floor(this.$root.innerHeight() - (this.$content.offset().top - this.$root.offset().top) - this.$statusBar.outerHeight(true));
+            this.$content.css('max-height', height+'px');
+            this.$content.height(height+'px');
+        }
+    };
+
+    Panel.create = function(contentType, selector, write, options) {
+        var constructor = Panel.getPanelClassFromContentType(contentType, write);
+        var error = !constructor;
+        if (error) {
+            // content type not found, we are nice and instantiate a text
+            // we display an error message so user understands why
+            constructor = Panel.getPanelClassFromContentType('text');
+        }
+        var ret = null;
+        var $root = $(selector);
+        if ($root.size() > 0) {
+            ret = new constructor($root, contentType, options);
+        }
+        if (error && ret) ret.setMessage('Invalid content type ('+contentType+')', 'error');
+        return ret;
+    };
+
+    Panel.prototype.isDownloadable = function() {
+        return false;
+    };
+
+    Panel.createFromState = function(panelState, key, options) {
+        // panelState =
+        // transcription/locus/1r/;ds=abbrv
+        // transcription/default/
+        var metaparts = panelState.split(';');
+        var parts = metaparts[0].split('/');
+        var contentType = parts[0];
+        var stateDict = (metaparts.length > 1) ? metaparts[1]: null;
+
+        //Panel.create(Panel.getPanelClassFromContentType(contentType), '.ui-layout-'+key);
+        return Panel.create(contentType, '.ui-layout-'+key, false, {contentAddress: metaparts[0], stateDict: stateDict});
+    };
+
+    // Returns the Panel class that manages contentType
+    // e.g. Translation => <PanelText>
+    // contentType can also be panel type
+    // e.g. text => <PanelText>
+    // Returns null if not found
+    Panel.getPanelClassFromContentType = function(contentType, write) {
+        // Get panel type from content type
+        // lookup in the dropdown of the panel template
+        // E.g. Translation => text
+        var contentTypeKey = contentType.toLowerCase();
+        if (contentTypeKey.match(/[^-0-9a-z_]/gi)) return null;
+        var panelType = $('#text-viewer-panel .dropdown-content-type a[href=#'+contentTypeKey+']:first').data('class') || contentType;
+
+        // Force first letter to uppercase. e.g Text
+        panelType = panelType.toUpperCase().substr(0, 1) + panelType.substr(1, contentType.length - 1);
+
+        var ret = 'Panel' + panelType + (write ? 'Write' : '');
+        return TextViewer[ret] || null;
+    };
+
+    Panel.prototype.enablePresentationOptions = function(options) {
+        if (options) {
+            var $pres = this.$presentationOptions;
+            $pres.find('li').each(function() {
+                var $li = $(this);
+                if (options.indexOf($li.data('id')) > -1) {
+                    $li.find('input').trigger('click');
+                }
+            });
+        }
+    };
+
+    Panel.prototype.applyPresentationOptions = function() {
+        if (this.$presentationOptions && this.$presentationOptions.length) {
+            var classes = this.$presentationOptions.dropdownCheckbox("unchecked").map(function(v) { return v.id; }).join(' ');
+            this.$content.removeClass(classes);
+            classes = this.$presentationOptions.dropdownCheckbox("checked").map(function(v) { return v.id; }).join(' ');
+            this.$content.addClass(classes);
+        }
+    };
+
+    Panel.prototype.getState = function() {
+        var ret = this.getContentAddressRelative();
+        var dict = this.getStateDict();
+        ret += Object.keys(dict).reduce(function(pv,cv) {
+            if (dict[cv]) {
+                return pv + cv + ':' + dict[cv] + ';';
+            }
+            return pv;
+        }, ';');
+        return ret;
+    };
+
+    Panel.prototype.getListFromPresentationOptions = function() {
+        ret = [];
+        if (this.$presentationOptions && this.$presentationOptions.length) {
+            ret = this.$presentationOptions.dropdownCheckbox("checked").map(function(v) { return v.id; });
+        }
+        return ret;
+    };
+
+    Panel.prototype.getStateDict = function() {
+        var ret = {};
+        //ret.dis = this.$presentationOptions.dropdownCheckbox("checked").map(function(v) { return v.id; }).join(' ');
+        ret.dis = (this.getListFromPresentationOptions()).join(' ');
+        var subl = this.getSubLocationUnresolved();
+        if (subl && subl.length) ret.subl = JSON.stringify(subl);
+        return ret;
+    };
+
+    Panel.prototype.setStateDict = function(stateDict) {
+        // dis:abbreviated entry;x:y;a:b c;
+        var me = this;
+        var args = stateDict.split(';');
+        args.map(function(arg) {
+            var pair = arg.split(':');
+            if (pair.length == 2) {
+                me.setStateDictArg(pair[0], pair[1]);
+            }
+        });
+    };
+
+    Panel.prototype.setStateDictArg = function(name, value) {
+        if (name == 'dis') {
+            this.enablePresentationOptions(value.split(' '));
+        }
+        if (name == 'subl') {
+            //this.enablePresentationOptions(value.split(' '));
+            this.moveToSubLocation(JSON.parse(value));
+        }
+    };
+
+    Panel.prototype.getPanelKey = function() {
+        var ret = this.$root.attr('class');
+        // ' .ui-layout-pane-north ' -> north
+        ret = ret.replace(/.*.ui-layout-pane-(\w+)\b.*/, '$1');
+        return ret;
+    };
+
+    Panel.prototype.onLocationChanged = function() {
+        this.loadContent();
+    };
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // PanelLocation
+    // A 'master' location widget, it has no content, just locationType, 
+    // location drop downs. Other panels can be sync'ed with it.
+    //
+    //////////////////////////////////////////////////////////////////////
+    // TODO: Create a new class PanelContent that inherit from Panel and has a content,
+    // status bar, etc. Move all the relevant methods from Panel to PanelContent
+    // Then PanelImage, PanelText, etc would inherit from that new class
+    // But PanelLocation would inherit from Panel directly
+    var PanelLocation = TextViewer.PanelLocation = function($root, contentType, options) {
+        TextViewer.Panel.call(this, $root, contentType, 'Location', options);
+    }
+
+    PanelLocation.prototype = Object.create(Panel.prototype);
+
+    PanelLocation.prototype.createUserInterface = function() {
+        // create the location controls
+        var $buttons = this.$root.find('.location-buttons');
+        $buttons.html($('#text-viewer-panel .location-buttons').html());
+
+        // show them
+        unhide($buttons.find('.dphidden'), true);
+        
+    }
+    
+    PanelLocation.prototype.loadContentCustom = function(loadLocations, address, subLocation) {
+        // Load all the possible locations with the API
+        // Special case: we only load the first time to get all the locations.
+        // Next times (see lese branch), we don't need to load any content.
+        if (loadLocations) {
+            var me = this;
+            this.callApi(
+                'loading content',
+                address,
+                function(data) {
+                    me.onContentLoaded(data);
+                },
+                {
+                    'load_locations': loadLocations ? 1 : 0,
+                }
+            );
+        } else {
+            parts = this.panelSet.getPanelAddressParts(address);
+            if (parts.contentType) {
+                // this will for a change of location and sync other panels, etc.
+                this.onContentLoaded({location: parts.location, location_type: parts.locationType});
+            }
+        }
+    };
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // PanelText
+    //
+    // A read-only Text Viewer panel. The content is simply displayed as HTML.
+    //
+    //////////////////////////////////////////////////////////////////////
+    var PanelText = TextViewer.PanelText = function($root, contentType, options) {
+        TextViewer.Panel.call(this, $root, contentType, 'Text', options);
+        var me = this;
+
+        this.getEditingMode = function() {
+            return false;
+        };
+
+        this.loadContentCustom = function(loadLocations, address, subLocation) {
+            // load the content with the API
+            var me = this;
+            this.callApi(
+                'loading content',
+                address,
+                function(data) {
+                    if (data.content !== undefined) {
+                        me.onContentLoaded(data);
+                    } else {
+                        //me.setMessage('ERROR: no content received from server.');
+                    }
+                },
+                {
+                    'load_locations': loadLocations ? 1 : 0,
+                }
+            );
+        };
+
+        this.$content.on('mouseup', function(e) {
+            if (!me.getEditingMode()) {
+                // find the dpt element we've just clicked on
+                var subLocation = get_sublocation_from_element(e.target);
+
+                if (subLocation.length) {
+                    me.setSubLocation(subLocation);
+                    // dispatch the element we are on
+                    //me.panelSet.syncWithPanel(me);
+                }
+            }
+        });
+
+    };
+
+    PanelText.prototype = Object.create(Panel.prototype);
+
+    PanelText.prototype.onContentLoaded = function(data) {
+        this.$content.addClass('mce-content-body').addClass('preview ct-'+this.getContentType());
+        this.$content.html(data.content);
+        Panel.prototype.onContentLoaded.call(this, data);
+    };
+
+    PanelText.prototype.isDownloadable = function() {
+        return true;
+    };
+
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // PanelTextWrite
+    //
+    // A Text Editor panel. The content is managed with TinyMCE.
+    // Can save modified content back to server.
+    //
+    //////////////////////////////////////////////////////////////////////
+    TextViewer.textAreaNumber = 0;
+
+    var PanelTextWrite = TextViewer.PanelTextWrite = function($root, contentType, options) {
+        TextViewer.PanelText.call(this, $root, contentType, options);
+
+        this.unreadyComponents.push('tinymce');
+
+        this.getEditingMode = function() {
+            return true;
+        };
+
+        // TODO: fix with 'proper' prototype inheritance
+        this._baseReady = this._ready;
+        this._ready = function() {
+            var ret = this._baseReady();
+            var me = this;
+
+            $(this.tinymce.editorContainer).on('psconvert', function() {
+                // mark up the content
+                // TODO: make sure the editor is read-only until we come back
+                me.saveContent({forceSave: true, autoMarkup: true});
+            });
+
+            $(this.tinymce.editorContainer).on('pssave', function() {
+                // mark up the content
+                // TODO: make sure the editor is read-only until we come back
+                me.saveContent({forceSave: true, saveCopy: true});
+            });
+
+            // make sure we save the content if tinymce looses focus or we close the tab/window
+            this.tinymce.on('blur', function() {
+                me.saveContent();
+            });
+
+            $(window).bind('beforeunload', function() {
+                me.saveContent({synced: true});
+            });
+
+            return ret;
+        };
+
+        // TODO: fix with 'proper' prototype inheritance
+        this.baseOnResize = this.onResize;
+        this.onResize = function () {
+            this.baseOnResize();
+            if (this.tinymce) {
+                // resize tinmyce to take the remaining height in the panel
+                var $el = this.$root.find('iframe');
+                var height = this.$content.innerHeight() - ($el.offset().top - this.$content.offset().top);
+                $el.height(height+'px');
+            }
+        };
+
+        this.getContentHash = function() {
+            var ret = this.tinymce.getContent();
+            return ret;
+            //return ret.length + ret;
+        };
+
+        this.saveContentCustom = function(options) {
+            // options:
+            // synced, autoMarkup, saveCopy
+            var me = this;
+            this.callApi(
+                'saving content',
+                this.loadedAddress,
+                function(data) {
+                    //me.tinymce.setContent(data.content);
+                    me.onContentSaved(data);
+                    if (options.autoMarkup) {
+                        me.tinymce.setContent(data.content);
+                        me.setNotDirty();
+                    }
+                },
+                {
+                    'content': me.tinymce.getContent(),
+                    'convert': options.autoMarkup ? 1 : 0,
+                    'save_copy': options.saveCopy ? 1 : 0,
+                    'method': 'POST',
+                },
+                options.synced
+            );
+        };
+
+        this.initTinyMCE = function() {
+            TextViewer.textAreaNumber += 1;
+            var divid = 'text-area-' + TextViewer.textAreaNumber;
+            this.$content.append('<div id="'+ divid + '"></div>');
+            var me = this;
+
+            var options = {
+                skin : 'digipal',
+                selector: '#' + divid,
+                init_instance_callback: function() {
+                    me.tinymce = window.tinyMCE.get(divid);
+                    me.componentIsReady('tinymce');
+                },
+                plugins: ['paste', 'code', 'panelset'],
+                toolbar: 'psclear undo redo pssave | psconvert | psclause | psClauseSecondary | pslocation | psperson | psex pssupplied psdel | code ',
+                paste_word_valid_elements: 'i,em,p,span',
+                paste_postprocess: function(plugin, args) {
+                    //args.node is a temporary div surrounding the content that will be inserted
+                    //console.log($(args.node).html());
+                    //$(args.node).html($(args.node).html().replace(/<(\/?)p/g, '<$1div'));
+                    //console.log($(args.node).html());
+                },
+                menubar : false,
+                statusbar: false,
+                height: '15em',
+                content_css : '/static/digipal_text/viewer/tinymce.css?v=10,/static/digipal_text/viewer/tinymce_custom.css?v=10'
+            };
+
+            if (this.contentType == 'codicology') {
+                options.toolbar = 'psclear undo redo pssave | psh1 psh2 | italic | pshand | pscodparch pscodfol pscodsign pscodperf pscodruling pscodothers | code';
+                options.paste_as_text = true;
+                options.paste_postprocess = function(plugin, args) {
+                    //args.node is a temporary div surrounding the content that will be inserted
+                    //console.log($(args.node).html());
+                    //$(args.node).html($(args.node).html().replace(/<(\/?)p/g, '<$1div'));
+                    //console.log($(args.node).html());
+                    //console.log(args.node);
+
+                    // remove all tags except <p>s
+                    var content = $(args.node).html();
+                    content = content.replace(/<(?!\/?p(?=>|\s.*>))\/?.*?>/gi, '');
+                    // remove attributes from all the elements
+                    content = content.replace(/<(\/?)([a-z]+)\b[^>]*>/gi, '<$1$2>');
+                    // remove &nbsp;
+                    content = content.replace(/&nbsp;/gi, '');
+                    // remove empty elements
+                    content = content.replace(/<[^>]*>\s*<\/[^>]*>/gi, '');
+                    $(args.node).html(content);
+                };
+            }
+
+            window.tinyMCE.init(options);
+
+        };
+
+        this.initTinyMCE();
+    };
+
+    PanelTextWrite.prototype = Object.create(PanelText.prototype);
+
+    PanelTextWrite.prototype.onContentLoaded = function(data) {
+        this.tinymce.setContent(data.content);
+        this.tinymce.focus();
+        this.tinymce.undoManager.clear();
+        this.tinymce.undoManager.add();
+        // We skip PanelText
+        Panel.prototype.onContentLoaded.call(this, data);
+    };
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // PanelImage
+    //
+    // An Image viewer panel. The content is displayed with OpenLayers.
+    // It also allows the creation of text-image annotations.
+    //
+    //////////////////////////////////////////////////////////////////////
+
+    var PanelImage = TextViewer.PanelImage = function($root, contentType, options) {
+
+        var me = this;
+
+        Panel.call(this, $root, contentType, 'Image', options);
+
+        this.loadContentCustom = function(loadLocations, address, subLocation) {
+            // load the content with the API
+            var me = this;
+            this.callApi(
+                'loading image',
+                address,
+                function(data) {
+//                    me.$content.html(data.content).find('img').load(function() {
+//                        me.onContentLoaded(data);
+//                    });
+                    //me.$content.text(data.content);
+
+                    me.onContentLoaded(data);
+                },
+                {
+                    'layout': 'width',
+                    'width': me.$content.width(),
+                    'height': me.$content.height(),
+                    'load_locations': loadLocations ? 1 : 0,
+                    'sub_location': JSON.stringify(subLocation),
+                }
+            );
+        };
+
+        this.applyOpenLayer = function(data) {
+
+            if (!data || !data.zoomify_url) {
+                // TODO: this is shortcut
+                // we may arrive here if selection doesn't return an zoomify url
+                // the general message below should only be shown when the
+                // list of locations from the server is empty
+                this.$content.html('<p>&nbsp;Full resolution image not available.</p>');
+                return;
+            }
+
+            // TODO: think about reusing the OL objects and only changing the underlying image
+            // rather than recreating everything each time
+            // See http://openlayers.org/en/v3.5.0/examples/zoomify.html
+            var me = this;
+
+            // empty the content as OL appends to it
+            this.$content.html('');
+
+            this.map = window.dputils.add_open_layer({
+                $target: this.$content,
+                image_url: data.zoomify_url,
+                image_height: data.height,
+                image_width: data.width,
+                zoom: this.map ? this.map.getView().getZoom() : 0,
+                load_tile_callback: function() {me.loadTile.apply(me, arguments);},
+                can_rotate: true,
+            });
+
+            this.annotator = window.ann3 = new window.AnnotatorOL3(this.map);
+
+            this.annotator.addListener(function (e) { me.annotatorEventHandler(e); });
+
+            this.clipImageToTop();
+
+            // Update address bar after panning & zooming
+            var view = this.map.getView();
+            view.on('change:center', function (event){me.panelSet.onPanelStateChanged(me);});
+            view.on('change:resolution', function (event){me.panelSet.onPanelStateChanged(me);});
+            view.on('change:rotation', function (event){me.panelSet.onPanelStateChanged(me);});
+
+            // tooltip to OL icon
+            this.$content.find('.ol-attribution').tooltip({title: 'Viewer by OpenLayers (link to external site)'});
+        };
+
+
+        /*
+            Open Layer Callback that keep count of the tile loading
+            We display a laoding status message to the user
+
+            incdec:
+                the number of tiles loading (-1 if a new one is loaded)
+                'reset': to reset the count (e.g. we load a new image)
+            error:
+                true  if an error occured during the tile loading
+        */
+        this.loadTile = function(incdec, error) {
+            if (incdec === 'reset') {
+                this.tileLoadingCount = 0;
+                this.tileLoadError = false;
+                return;
+            }
+
+            if (error) this.tileLoadError += 1;
+            if (incdec !== undefined) {
+                this.tileLoadingCount += incdec;
+            }
+            if (this.tileLoadingCount <= 0) {
+                if (this.tileLoadError) {
+                    this.setMessage('Error while loading image.', 'error');
+                } else {
+                    this.setMessage('Image loaded.', 'success');
+                }
+                this.tileLoadError = 0;
+            } else {
+                this.setMessage('Loading image...', 'info');
+            }
+        };
+
+        this.clipImageToTop = function() {
+            var map = this.map;
+            var view = map.getView();
+            var imageFullHeight = view.getProjection().getExtent()[3];
+            var viewerFullHeight = map.getSize()[1] * view.getResolution();
+            if (viewerFullHeight < imageFullHeight) {
+                view.setCenter([view.getCenter()[0], - (viewerFullHeight / 2)]);
+            }
+        };
+
+    };
+
+    PanelImage.prototype = Object.create(Panel.prototype);
+
+    PanelImage.prototype.onContentLoaded = function(data) {
+        // avoid reloading the same image
+        if (!(this.last_data && this.last_data.zoomify_url == data.zoomify_url)) {
+            // OL
+            this.applyOpenLayer(data);
+
+            // annotations
+            this.annotator.addAnnotations(data.annotations);
+
+            // text-image links
+            //this.$linker.closest('.dphidden').toggle(true);
+            unhide(this.$linker, true);
+            this.resetLinker(data);
+        }
+
+        Panel.prototype.onContentLoaded.call(this, data);
+
+        this.last_data = data;
+    };
+
+    PanelImage.prototype.moveToSubLocation = function(subLocation) {
+        var ret = false;
+        if (this.annotator) {
+            var feature = this.annotator.getFeatureFromElementId(subLocation);
+            this.annotator.selectFeature(feature);
+            this.annotator.zoomToFeature(feature);
+            if (feature) this.setSubLocation(subLocation);
+            ret = !!feature;
+        }
+        return ret;
+    };
+
+    PanelImage.prototype.resetLinker = function(data) {
+        // eg.:  "text_elements": [[["", "clause"], ["type", "address"]], [["", "clause"], ["type", "disposition"]], [["", "clause"], ["type", "witnesses"]]]
+        var me = this;
+        var elements = data.text_elements;
+
+        var htmlstr = '<option value="">Unspecified</option>';
+        elements.map(function(el) {
+            var key = JSON.stringify(el);
+            // clause > address
+            //var label = (el_shorten.map(function(attr) { return attr[1]; })).join(' > ');
+            // address (clause)
+            var label = el.pop()[1];
+            if (el.length > 0) label += ' (' + el.pop()[1] + ')';
+            htmlstr += '<option value="'+window.dputils.escapeHtml(key)+'">'+label+'</option>';
+        });
+        this.$linkerText.html(htmlstr);
+        this.$linkerText.trigger('liszt:updated');
+    };
+
+    PanelImage.prototype.annotatorEventHandler = function(e) {
+        var me = this;
+
+        // update the selection count
+        var selections = e.annotator.getSelectedFeatures();
+        this.$linkerImage.html('' + selections.getLength());
+
+        // set unique client id if no server id exists (unsaved feature)
+        selections.forEach(function (feature) {
+            if (!feature.getId() && !feature.get('clientid')) {
+                feature.set('clientid', '' + (new Date()).getTime() + ':' + Math.floor((Math.random() * 10000)));
+            }
+        });
+
+        // update the selected text element in the drop down
+        var elementid = '';
+        selections.forEach(function (feature) {
+            elementid = JSON.stringify(feature.get('elementid') || '[]');
+        });
+        this.$linkerText.val(elementid);
+        this.$linkerText.trigger('liszt:updated');
+
+        // send the changes to the server
+        if (e.action === 'changed' || e.action === 'deleted') {
+            this.onAnnotationChanged(e.features, e.action);
+        }
+    };
+
+    PanelImage.prototype.onLinkerTextChanged = function() {
+        var feature = null;
+        var elementid = JSON.parse(this.$linkerText.val() || '[]');
+        if (elementid) {
+            //feature = this.annotator.findFeature({properties: {elementid: JSON.parse(elementid)} });
+            feature = this.annotator.getFeatureFromElementId(elementid);
+        }
+
+        if (!feature) {
+            // no feature for this element
+            // assign the element to the currently selected feature
+            this.annotator.getSelectedFeatures().forEach(function(afeature) {
+                afeature.set('elementid', elementid);
+                feature = afeature;
+            });
+        }
+
+        this.annotator.selectFeature(feature);
+
+        // send the changes to the server
+        //this.onAnnotationChanged();
+    };
+
+    PanelImage.prototype.onAnnotationChanged = function(features, action) {
+        // Selection in linker has changed: either annotation or text element.
+        // Save the new link.
+        // features: a list of features to convert into links
+        //  if currently selected feature, we can leave the arg undefined
+        var me = this;
+
+        if (!(features instanceof Array)) {
+            features = this.annotator.getSelectedFeatures().getArray();
+        }
+
+        var links = [];
+        (features).map(function(feature) {
+            var geojson = JSON.parse(me.annotator.getGeoJSONFromFeature(feature));
+            if (action) geojson.action = action;
+            var link = [JSON.parse(me.$linkerText.val() || 'null'), geojson];
+            links.push(link);
+        });
+        links = JSON.stringify(links);
+
+        this.callApi(
+            'saving text-image link',
+            this.loadedAddress,
+            function(data) {
+                //me.tinymce.setContent(data.content);
+                //me.onContentSaved(data);
+            },
+            {
+                'links': links,
+                'method': 'POST'
+            },
+            false
+        );
+
+    };
+
+    PanelImage.prototype.getStateDict = function() {
+        var ret = Panel.prototype.getStateDict.call(this);
+
+        var map = this.map;
+        if (map) {
+            var view = map.getView();
+            var olv = [Math.round(view.getResolution()),
+                        Math.round(view.getCenter()[0]),
+                        Math.round(view.getCenter()[1]),
+                        Math.round(view.getRotation() * 180 / Math.PI)];
+            ret.olv = olv.join(',');
+        }
+
+        return ret;
+    };
+
+    PanelImage.prototype.onResize = function() {
+        Panel.prototype.onResize.call(this);
+        if (this.map) {
+            this.map.updateSize();
+        }
+    };
+
+    PanelImage.prototype.setStateDictArg = function(name, value) {
+        // olv:RES,CX,CY
+        if (name == 'dis') {
+            this.enablePresentationOptions(value.split(' '));
+        }
+        if (name === 'olv') {
+            var parts = value.split(',');
+            var map = this.map;
+            var view = map.getView();
+            view.setResolution(parseFloat(parts[0]));
+            view.setCenter([parseFloat(parts[1]), parseFloat(parts[2])]);
+            if (parts.length > 3) {
+                view.setRotation(parseFloat(parts[3]) * Math.PI / 180);
+            }
+        }
+    };
+
+    PanelImage.prototype.applyPresentationOptions = function() {
+        var classes = this.getListFromPresentationOptions();
+
+        this.annotator.setStyleTheme((classes.indexOf('highlight') > -1) ? '' : 'hidden');
+    };
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // PanelSearch
+    //
+    //////////////////////////////////////////////////////////////////////
+    var PanelSearch = TextViewer.PanelSearch = function($root, contentType, options) {
+        TextViewer.Panel.call(this, $root, contentType, 'Search', options);
+
+        this.loadContentCustom = function(loadLocations, address, subLocation) {
+            // load the content with the API
+            var me = this;
+            this.callApi(
+                'loading search',
+                address,
+                function(data) {
+                    me.$content.html(data.content);
+                    me.onContentLoaded(data);
+                    me.$content.find('form').on('submit', function() {
+                        var query = me.$content.find('input[name=query]').val();
+                        me.search(address, query);
+                        return false;
+                    });
+                },
+                {
+                    'load_locations': loadLocations ? 1 : 0,
+                }
+            );
+        };
+
+        this.search = function(address, query) {
+            var me = this;
+            this.callApi(
+                'searching',
+                address,
+                function(data) {
+                    me.$content.html(data.content);
+                    me.$content.find('form').on('submit', function() {
+                        var query = me.$content.find('input[name=query]').val();
+                        me.search(address, query);
+                        return false;
+                    });
+                    me.$content.find('a[data-location-type]').on('click', function() {
+                        me.panelSet.onPanelContentLoaded(me, 'entry', $(this).attr('href'));
+                        //this.panelSet.onPanelContentLoaded(this, data.location_type, data.location);
+                        return false;
+                    });
+                },
+                {
+                    'query': query,
+                }
+            );
+        };
+
+    };
+
+    PanelSearch.prototype = Object.create(Panel.prototype);
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // PanelXmlelement
+    //
+    //////////////////////////////////////////////////////////////////////
+    var PanelXmlelementWrite = TextViewer.PanelXmlelementWrite = function($root, contentType) {
+        TextViewer.Panel.call(this, $root, contentType);
+    };
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Utilities
+    //
+    //////////////////////////////////////////////////////////////////////
+    TextViewer.callApi = function(url, onSuccess, onComplete, requestData, synced) {
+        // See http://stackoverflow.com/questions/9956255.
+        // This tricks prevents caching of the fragment by the browser.
+        // Without this if you move away from the page and then click back
+        // it will show only the last Ajax response instead of the full HTML page.
+        url = url ? url : '';
+        var url_ajax = url + ((url.indexOf('?') === -1) ? '?' : '&') + 'jx=1';
+
+        var getData = {
+            url: url_ajax,
+            data: requestData,
+            async: (synced ? false : true),
+            complete: onComplete,
+            success: onSuccess
+        };
+        if (requestData && requestData.method) {
+            getData.type = requestData.method;
+            delete requestData.method;
+        }
+        var ret = $.ajax(getData);
+
+        return ret;
+    };
+
+    TextViewer.getStrFromTime = function(date) {
+        date = date || new Date();
+        var parts = [date.getHours(), date.getMinutes(), date.getSeconds()];
+        for (var i in parts) {
+            if ((i > 0) && (parts[i] < 10)) parts[i] = '0' + parts[i];
+        }
+        return parts.join(':');
+    };
+
+    // These are external init steps for JSLayout
+    function initLayoutAddOns() {
+        //
+        //  DISABLE TEXT-SELECTION WHEN DRAGGING (or even _trying_ to drag!)
+        //  this functionality will be included in RC30.80
+        //
+        $.layout.disableTextSelection = function(){
+            var $d  = $(document),
+                    s   = 'textSelectionDisabled',
+                    x   = 'textSelectionInitialized'
+            ;
+            if ($.fn.disableSelection) {
+                if (!$d.data(x)) // document hasn't been initialized yet
+                    $d.on('mouseup', $.layout.enableTextSelection ).data(x, true);
+                if (!$d.data(s))
+                    $d.disableSelection().data(s, true);
+            }
+        };
+        $.layout.enableTextSelection = function(){
+            var $d  = $(document),
+                    s   = 'textSelectionDisabled';
+            if ($.fn.enableSelection && $d.data(s))
+                $d.enableSelection().data(s, false);
+        };
+
+        var $lrs = $(".ui-layout-resizer");
+
+        // affects only the resizer element
+        // TODO: GN - had to add this condition otherwise the function call fails.
+        if ($.fn.disableSelection) {
+            $lrs.disableSelection();
+        }
+
+        $lrs.on('mousedown', $.layout.disableTextSelection ); // affects entire document
+    }
+
+    // TODO: move to dputils.js
+
+    // See https://docs.djangoproject.com/en/1.7/ref/contrib/csrf/#ajax
+    // This allows us to POST with Ajax
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    function sameOrigin(url) {
+        // test that a given url is a same-origin URL
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+            (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+            // or any other URL that isn't scheme relative or absolute i.e relative.
+            !(/^(\/\/|http:|https:).*/.test(url));
+    }
+
+    function get_sublocation_from_element(element) {
+        // returns a sub location array from a html element
+        // <span data-dpt='location' data-dpt-loctype="entry">1a1</span>
+        // => [['', 'location'], ['loctype', 'entry'], ['@text', '1a1']]
+        var ret = [];
+        var $el = $(element).closest('[data-dpt]');
+        if ($el.length) {
+            // convert attributes
+            ret = $.map($el[0].attributes, function(val, i) {
+                var name = val.name.replace(/^data-dpt-?/, '');
+                if (name != val.name && name !== 'cat') return [[name, val.value]];
+            });
+            // filter: we don't want ANY element (e.g. clause: ok, exp/abbr: no)
+            if (ret.length > 0) {
+                var accepted_tags = ['clause', 'location', 'person'];
+                if (accepted_tags.indexOf(ret[0][1]) < 0) {
+                    ret = [];
+                }
+            }
+            // add slugified small text content
+            if (ret.length > 0) {
+                var text = $el.text().toLowerCase().replace(/(^\s+|\s+$)/g, '').replace(/\W/g, '-');
+                if (text.length > 0 && text.length < 20) {
+                    ret.push(['@text', text]);
+                }
+            }
+        }
+
+        return ret;
+    }
+
+
+    function unhide($element, condition) {
+        if (!$element || $element.length < 1) return;
+        
+        var $el = $element.closest('.dphidden, .dpunhidden');
+        if (!$el.hasClass('dphidden') && !$el.hasClass('dpunhidden')) {
+            console.log('NO CLASS 0!');
+        }
+        if ($el.length < 1) {
+            console.log('NOT FOUND!');
+        }
+        $el.toggleClass('dphidden', !condition);
+        $el.toggleClass('dpunhidden', !!condition);
+        if (!$el.hasClass('dphidden') && !$el.hasClass('dpunhidden')) {
+            console.log('NO CLASS!');
+        }
+    }
+
+    // Improve all the select elements under a root element
+    // At the moment we are using Chosen plugin
+    function upgrade_selects($root) {
+        $root.find('select').each(function() {
+            $(this).chosen({
+                disable_search: $(this).hasClass('no-search'),
+                no_results_text: $(this).hasClass('can-add') ? 'Not found, select to add' : 'Location not found',
+            });
+        });
+    }
+
+    function urldecode(str) {
+        return decodeURIComponent((str+'').replace(/\+/g, '%20'));
+    }
+
+    initLayoutAddOns();
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+                // Send the token to same-origin, relative URLs only.
+                // Send the token only if the method warrants CSRF protection
+                // Using the CSRFToken value acquired earlier
+                xhr.setRequestHeader("X-CSRFToken", window.dputils.getCookie('csrftoken'));
+            }
+        }
+    });
+
+}( window.TextViewer = window.TextViewer || {}, jQuery ));

@@ -1,0 +1,498 @@
+{% load html_escape %}
+
+<span id="info-div" style="opacity: 0.9; position: fixed; z-index: 5000; top:0; left: 0; margin: 0.3em; padding: 0.2em; border: 1px solid orange; background-color: white; display: none;"></span>
+
+<div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Colour
+                {{ queries.get_hidden_inputs|safe }}
+                </th>
+                <th>Hits</th>
+                <th>Query</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for query in queries.get_queries %}
+                <tr class="{% if query.is_active%}warning{% endif %}">
+                    <td id="q{{query.index}}_c"><span style="display:inline-block;width:1em;height:1em;background-color:{{query.get_color}}">&nbsp</span></td>
+                    <td>{{ query.get_count }}</td>
+                    <td>{{ query.get_summary }}</td>
+                    <td>
+                        <a href="{% filter add_query_params:request.META.QUERY_STRING %}?q{{ query.index }}_hidden={% if query.is_hidden %}0{% else %}1{% endif %}{% endfilter %}" class="btn btn-default btn-sm">
+                            {% if query.is_hidden %}Show{% else %}Hide{% endif %}
+                        </a>
+                        {% if 0 and query.index > 0 %}<a href="" class="btn btn-default btn-sm">Select</a>{% endif %}
+                        {% if query.index == 1 %}<a href="{{ queries.get_copy_link }}" class="btn btn-default btn-sm">Save copy</a>{% endif %}
+                        {% if query.index > 1 and forloop.last %}<a href="{{ query.get_remove_link }}" class="btn btn-default btn-sm">Remove</a>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+
+    <div style="min-height:2.5em;">
+        &nbsp;
+
+        <div class="btn-group pull-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                    {{ vcat.label }}
+                   <span class="caret"></span>
+                </button>
+                <input type="hidden" name="vcat" value="{{ vcat.key }}"/>
+                <ul class="dropdown-menu" role="menu">
+                    {% for cat in vcats %}
+                        <li><a href="{% filter add_query_params:request.META.QUERY_STRING %}?vcat={{ cat.key }}{% endfilter %}">{{ cat.label }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="vis-div" style="height:400px; width: 100%; border: 1px solid lightgrey; margin-bottom: 3em;">
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Visualisation Settings</div>
+        <div class="panel-body">
+            <div class="input-group2">
+                <label for="vz_bh">Bars height (in pixel):</label>
+                <input name="vz_bh" id="vz_bh" type="text" value="{{viz.vz_bh}}" class="form-control input-to-slider"
+                    data-max="50" />
+            </div>
+            <div class="input-group2">
+                <label for="vz_gs">Annotations size (in pixel):</label>
+                <input name="vz_gs" id="vz_gs" type="text" value="{{viz.vz_gs}}" class="form-control input-to-slider"
+                    data-max="100" />
+            </div>
+            <br/>
+            <input class="btn btn-default" type="submit" name="__Redraw" value="Redraw" />
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+var DPCanvas = function($canvas) {
+    this.$canvas = $canvas;
+    this.zindex = 100;
+    this.layers = {'': this};
+}
+DPCanvas.prototype.getLayer = function(name) {
+    name = name || '';
+    return this.layers[name];
+};
+DPCanvas.prototype.$cnv = function(name) {
+    return this.getLayer(name).$canvas;
+};
+DPCanvas.prototype.ctx = function(name) {
+    return this.getLayer(name).getContext();
+};
+DPCanvas.prototype.getContext = function() {
+    return this.$canvas[0].getContext('2d');
+};
+DPCanvas.prototype.newLayer = function(name) {
+    this.zindex += 100;
+
+    var $canvas = $(this.$canvas[0].outerHTML);
+    $canvas.css('z-index', this.zindex);
+    $canvas.css('position', 'absolute');
+    $canvas.css('width', this.$canvas.width());
+    $canvas.css('height', this.$canvas.height());
+
+    this.$canvas.before($canvas);
+    var ret = new DPCanvas($canvas);
+    this.layers[name] = ret;
+    return ret;
+};
+DPCanvas.prototype.setOpacity = function(opacity) {
+    this.$canvas.css('opacity', opacity);
+}
+DPCanvas.prototype.clear = function(opacity) {
+    this.getContext().clearRect(0, 0, this.$canvas[0].width, this.$canvas[0].height);
+}
+
+function dpvis() {
+    var data = {{ canvas|json }};
+    window.datavis = data;
+    if (!data.drawing || !data.drawing.points) return;
+    var pts = data.drawing.points;
+    var xs = data.drawing.x;
+    var ys = data.drawing.y;
+    var cdims = [data.width, data.height];
+    var colors = data.drawing.colors;
+    var summaries = data.drawing.summaries;
+
+    window.view_init = function() {
+        if (data.drawing && data.drawing.points) {
+            $(function() {
+                $(window).resize(redraw_vis);
+            })
+            redraw_vis();
+        }
+    }
+
+    if (typeof $ !== 'undefined') {
+        redraw_vis();
+    }
+
+    function redraw_vis() {
+        $('select[name=vcat]').on('change', function() {
+            $(this).closest('form').submit();
+        });
+
+        var bar_height = data.drawing.bar_height;
+        var last_selected_point = null;
+        var label_margin = data.drawing.label_margin;
+        var font_size = data.drawing.font_size;
+        //var extra_y = font_size+(label_margin*2) + bar_height * 2;
+        //var extra_y = font_size+(label_margin*2) + bar_height * 2;
+        var extra_y = 0;
+        var extra_x = 200;
+        var label_color = '#202040';
+        var point_index = {};
+
+
+        // update sliders
+        $('.input-to-slider').each(function() {
+            var $input = this;
+            var handler = function($input) {
+                window.dputils.addSliderTotextInput($input);
+            };
+            if (window.dputils) {
+                handler($input);
+            } else {
+                $(window).on('dputils:ready', function() {handler($input);});
+            }
+        });
+
+        var $container = $('#vis-div');
+        resize_container($container);
+        function resize_container($container) {
+            var ret = 200;
+            // enough height to write all the category labels
+            ret = (font_size + (label_margin * 2)) * (1 + ys.length);
+            // enough height to display all the data points with 2px height
+            ret_alt = cdims[1] * bar_height;
+            if (ret_alt > ret) { ret = ret_alt; };
+            //
+            ret += extra_y;
+            $container.css('height', ret + 'px');
+            return ret;
+        }
+
+        var dims = [$container.width(), $container.height()];
+        var $canvas = $('<canvas tabindex="0" class="canvas" height="'+ dims[1] +'" width="' + dims[0] + '" ' +
+                        ' style="z-index: 100; display: block; width: 100%;">' +
+                        '</canvas>'
+                    );
+        $container.html($canvas);
+        var canvas = new DPCanvas($canvas);
+        var ctx = canvas.getContext();
+        canvas.newLayer('graphs');
+        canvas.getLayer('graphs').setOpacity(0.8);
+        canvas.newLayer('hovers');
+        canvas.newLayer('events');
+        canvas.getLayer('events').setOpacity(0);
+
+        function gct(name) {
+            return canvas.ctx(name);
+        }
+
+        var ky = 1.0 / (cdims[1] + 1) * (dims[1] - extra_y);
+        var ky_min = (ky < 1) ? 1 : Math.floor(ky);
+        var kx = 1.0 / (cdims[0] + 1) * (dims[0] - extra_x);
+        var kx_min = (kx < 1) ? 1 : Math.floor(kx);
+        // x coord of the maximum data point
+        var max_x = coord(cdims[0], 0)[0];
+        //var dot_size = kx_min < ky_min ? kx_min : ky_min;
+
+        function get_color_from_point(pt) {
+            // TODO: cache combinations!!!
+            return get_color_from_layers(pt[2]);
+        }
+
+        function get_color_from_layers(layer_ids) {
+            if (layer_ids.length == 1) return data.drawing.colors[layer_ids[0]];
+            var ret = '';
+            for (var i = 0; i < layer_ids.length; i++) {
+                if (layer_ids[i] > 0) {
+                    var c = data.drawing.colors[layer_ids[i]];
+                    if (ret != '') {
+                        ret = tinycolor.mix(ret, c).toHexString();
+                    } else {
+                        ret = c;
+                    }
+                }
+            }
+            //console.log(ret, layer_ids)
+            return ret;
+        }
+
+        function draw_pt(pt, highlight, add_to_index) {
+            var ctx = gct(highlight ? 'hovers' : '');
+            ctx.fillStyle = get_color_from_point(pt);
+            if (highlight) ctx.fillStyle = '#ffff00';
+            var cs = coord(pt[0][0], pt[1]);
+            var cs2 = coord(pt[0][1], pt[1]);
+            var l = (cs2[0] - cs[0]) + kx_min
+            if (cs[0] + l > max_x) {
+                l = max_x - cs[0];
+            };
+
+            if (add_to_index) {
+                if (!point_index[cs[1]]) point_index[cs[1]] = [];
+                point_index[cs[1]].push([pt, [cs[0], cs[0]+l]]);
+            }
+
+            // draw the bar
+            ctx.fillRect(cs[0], cs[1], (l > 1) ? l-1 : l, ky_min);
+
+            // draw the image (if any)
+            if (pt[6]) {
+                draw_graph(pt[6], cs[0] + l, cs[1] + ky_min, highlight);
+            }
+
+            // draw the bar at the bottom
+            if (highlight) {
+                cs = coord(pt[0][0], ys[ys.length-1][1]);
+                ctx.fillRect(cs[0], cs[1], (l > 1) ? l-1 : l, ky_min/2);
+            }
+        }
+
+        function draw_graph(url, x, y, highlight) {
+            var image = new Image();
+            image.onload = function() {
+                var ctx = gct(highlight ? 'hovers' : 'graphs');
+                if (highlight) {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.fillRect(x-1, y-1, image.width+2, image.height+2);
+                }
+                ctx.drawImage(image, x, y);
+            };
+            image.src = url;
+        }
+
+        function draw_histogram(histogram, ys) {
+            var base = coord(0, ys[ys.length - 1][1]);
+            var bcolors = [colors[0], get_color_from_layers(colors.map(function(v,i){ return i; }))];
+
+//             function draw_bar(color, x, size) {
+//                 if (size < 1) return;
+//                 ctx.fillStyle = color;
+//                 var cs = coord(x, ys[ys.length - 1][1] + size / 2.0);
+//                 ctx.fillRect(cs[0], base[1], kx_min + 1, cs[1] - base[1]);
+//             }
+
+//             $.each(histogram, function(x, layers) {
+//                 var sizes = [0, 0];
+//                 var acolors = [];
+//                 $.each(layers, function(layer, count) {
+//                     sizes[(layer == 0) ? 0 : 1] += count;
+//                     if (layer > 0 && count > 0) acolors.push(layer);
+//                 });
+//                 for (i in sizes) {
+//                     draw_bar((i == 0) ? colors[0] : get_color_from_layers(acolors), x, sizes[i]);
+//                 }
+//             });
+
+            function draw_bar(color, x, y0, size) {
+                if (size < 1) return;
+                ctx.fillStyle = color;
+                var cs1 = coord(x, ys[ys.length - 1][1] + y0 / 2.0);
+                var cs2 = coord(x, ys[ys.length - 1][1] + (y0 + size) / 2.0);
+                ctx.fillRect(cs1[0], cs1[1], kx_min + 1, cs2[1] - cs1[1]);
+            }
+
+            $.each(histogram, function(x, layercombs) {
+                var y0 = 0;
+                var acolors = [];
+                for (var i = 0; i < layercombs.length; i++) {
+                    acolors = layercombs[i][0].split(',').map(function(v) {return parseInt(v)});
+                    var size = layercombs[i][1];
+                    draw_bar(get_color_from_layers(acolors), x, y0, size);
+                    y0 += layercombs[i][1];
+                }
+            });
+        }
+
+        function draw_xs(axis) {
+            // axis
+            ctx.fillStyle = label_color;
+            cs = coord(cdims[0], axis[0][1]);
+            ctx.fillRect(0, cs[1], cs[0], 1);
+
+            axis.map(function(pt, pti) {draw_label_x(pt); });
+            //draw_label(axis[0]);
+
+            xdivs = data.drawing.xdivs;
+            if (xdivs) {
+                xdivs.map(function(pt, pti) {draw_xdiv(pt); });
+            }
+        }
+
+        function draw_xdiv(pt) {
+            ctx.fillStyle = '#B0B0B0';
+            var cs = coord(pt[0], pt[1]);
+            ctx.fillRect(cs[0], 0, 1, cs[1]);
+        }
+
+        function draw_label_x(pt) {
+            //var xaxis_y = coord(0, pt[1]);
+            // small bar to indicate the pos of the label on the axis
+            // TODO: bar size depends on label size
+            ctx.fillStyle = label_color;
+            var cs = coord(pt[0], pt[1]);
+            ctx.fillRect(cs[0], cs[1], 1, 10);
+
+            // label
+            // TODO: label pos depends on label size
+            write_text(pt[2], cs[0], cs[1]);
+        }
+
+        function draw_ys(axis) {
+            // axis
+            ctx.fillStyle = label_color;
+            var cs = coord(0, axis[axis.length-2][1]);
+            ctx.fillRect(max_x, 0, 1, cs[1]);
+
+            var max_count = axis.reduce(function(last, cat, i, array) {
+                return last + cat[3];
+            }, 0);
+
+            axis.map(function(pt, pti) {
+                var bottomy = ((pti + 1) < axis.length) ? axis[pti + 1][1] : cdims[1];
+                draw_label_y(pt, max_count, bottomy);
+            });
+            //draw_label(axis[0]);
+        }
+
+        function draw_label_y(pt, max_count, bottomy) {
+            var cs = coord(cdims[0], pt[1]);
+            var bottom_cs = coord(cdims[0], bottomy)
+
+            // global % bar
+            var bar_height = font_size + label_margin * 2;
+            var bar_height = bottom_cs[1] - cs[1];
+            ctx.fillStyle = '#E0E0E0';
+            var pc = (1.0 / max_count) * pt[3];
+            ctx.fillRect(dims[0] - Math.ceil(extra_x * pc), cs[1], extra_x, bar_height);
+
+            // local % bar
+            ctx.fillStyle = '#FFB0B0';
+            pc = (1.0 / max_count) * pt[4];
+            ctx.fillRect(dims[0] - Math.ceil(extra_x * pc), cs[1], extra_x, bar_height);
+
+            if (pt[2] && pt[2].length) {
+                // small bar to indicate the pos of the label on the axis
+                // TODO: bar size depends on label size
+                if (cs[1] > 1) {
+                    ctx.fillStyle = '#707070';
+                    ctx.fillRect(0, cs[1], dims[0], 1);
+                    ctx.fillStyle = label_color;
+                    ctx.fillRect(cs[0], cs[1], extra_x, 1);
+                }
+
+                // label
+                // TODO: label pos depends on label size
+                var label = pt[2] + ' ( ' + pt[4] + ' / ' + pt[3] + ' )';
+                write_text(label, cs[0], cs[1], pt[4] ? label_color : '#404040');
+            }
+        }
+
+        function write_text(text, x, y, color) {
+            ctx.fillStyle = color ? color : label_color;
+            ctx.font = font_size + 'px Arial';
+            ctx.fillText(text, x+label_margin, y+font_size);
+        }
+
+        function coord(x, y) {
+            return [Math.floor(x * kx), Math.floor(y * ky)];
+        }
+
+        draw_xs(xs);
+        draw_ys(ys);
+        draw_histogram(data.drawing.histogram, ys);
+        pts.map(function(pt, pti) {draw_pt(pt, false, true); });
+
+        canvas.$cnv('events').on('mousemove mouseleave', function(e) {
+            // mouse is over canvas
+            // we have a selected hand and a selected page
+            var pos = get_mouse_pos(this, e);
+            show_info_at(pos);
+        });
+
+        canvas.$cnv('events').on('click', function(e) {
+            // mouse is over canvas
+            // we have a selected hand and a selected page
+            var pos = get_mouse_pos(this, e);
+            point = get_point_from_pos(pos);
+            if (point) {
+                var win = window.open(point[4], '_blank');
+                win.focus();
+            }
+        });
+
+        function get_mouse_pos(canvas, evt) {
+            var rect = canvas.getBoundingClientRect();
+            var ret = {
+                x: Math.round(1.0 * (evt.clientX - rect.left) / $(canvas).width() * $(canvas).attr('width')),
+                y: Math.round(1.0 * (evt.clientY - rect.top) / $(canvas).height() * $(canvas).attr('height')),
+            };
+            //console.log(ret);
+            return ret;
+        }
+
+        function get_point_from_pos(pos) {
+            var ret = null;
+            for (var i = 0; i < ky; i++) {
+                var pts = point_index[pos.y - i];
+                if (pts) {
+                    pts.map(function(pt, pti) {
+                        if (pos.x >= pt[1][0] & pos.x <= pt[1][1]) {
+                            ret = pt[0];
+                        }
+                    });
+                    if (ret) break;
+                }
+            }
+            return ret;
+        }
+
+        function show_info_at(pos) {
+            var message = '';
+
+            var selected_point = get_point_from_pos(pos);
+            if (selected_point != last_selected_point) {
+                if (last_selected_point) {
+                    canvas.getLayer('hovers').clear();
+                }
+                if (selected_point) {
+                    draw_pt(selected_point, true);
+                    message = selected_point[3];
+
+                    // add the queries it belongs to
+                    var query_indexes = selected_point[2];
+                    for (var i = 0; i < query_indexes.length; i++) {
+                        message += '<tr><td>'+$('#q'+query_indexes[i]+'_c').html()+'</td><td>'+summaries[query_indexes[i]]+'</td></tr>';
+                    }
+                }
+
+                var $info_div = $('#info-div');
+                $info_div.toggle(!!message);
+
+                $info_div.html('<table class="table table-compact" style="font-size: small;">'+message+'</table>');
+            }
+            last_selected_point = selected_point;
+        }
+
+    }
+};
+//};
+dpvis();
+
+</script>

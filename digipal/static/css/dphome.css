@@ -1,0 +1,133 @@
+/* index page, carousel */
+
+/* -------------------------------------------- */
+/* CAROUSEL */
+
+.carousel.slide {
+  -webkit-box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.35);
+  -moz-box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.35);
+  -ms-box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.35);
+  -o-box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.35);
+  box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.carousel-caption {
+    background-color: rgba(0,0,0,0.75);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 5px 0;
+    font-size: 85%;
+}
+
+.carousel-caption p {
+  /* Enough space above for the caption background to cover
+   * the navigation
+   */
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 1.5em 2px 2px 2px;
+  padding-left: 4px;
+}
+
+.carousel-caption a { 
+    color:white; 
+    text-decoration: underline;
+}
+
+ol.carousel-indicators {
+    bottom: 1.3em;
+}
+
+a.carousel-control.left, a.carousel-control.right {
+    background-image: none;
+    /* width: 8%; */
+}
+
+a.carousel-control span.glyphicon {
+    top: 45%;
+}
+
+/* Remove car. nav. on small display */
+@media (max-width: 450px) {
+    .carousel-caption p {
+        margin-top: 2px;
+    }
+    
+    ol.carousel-indicators {
+        display: none;
+    }
+}
+
+/* black background around left/right buttons*/
+a.carousel-control span.glyphicon:before {
+  background-color: rgba(0,0,0,0.75);
+  padding: 0.3em;
+  border-radius: 6px;
+}
+
+ 
+/* END CAROUSEL */
+/* -------------------------------------------- */
+
+.contentSection{
+    margin-top: 5%;
+}
+
+#home_page_list {
+    margin-left:4.5%;
+}
+
+#homeSection {
+    margin-top: 1em;
+}
+
+.recentPosts .header1 {
+    margin-bottom:0.5em;
+}
+/* ? */
+
+.home-page-listings ul {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+.home-page-listings ul li {
+    border-bottom: 1px dotted #efefef;
+    min-height: 5em;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.home-page-listings dl {
+    margin-top: 1em;
+    margin-bottom: 0;
+}
+
+.home-page-listings dl dt {
+    min-height: 5em;
+    font-weight: normal;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.home-page-listings dl dd {
+    border-bottom: 1px dotted #efefef;
+    margin-top: -3.5em;
+    min-height: 3.5em;
+    margin-bottom: 0;
+}
+
+.home-page-listings .legend {
+    font-size: smaller;
+}
+
+a.carousel-control.right span.glyphicon {
+    right: 1em;
+    margin-right: .1em;
+}
+
+a.carousel-control.left span.glyphicon {
+    left: 1em;
+}

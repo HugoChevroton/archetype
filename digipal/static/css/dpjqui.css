@@ -1,0 +1,75 @@
+/* Overwriting dialog style jquery-ui */
+
+.ui-dialog{
+    border: 1px solid rgb(204, 204, 204) !important;
+    padding:0 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+    z-index: 900;
+    /* overflow-y: auto; */
+    margin:0;
+    /* width:290px !important; */
+}
+
+.ui-dialog p:last-child{
+    border: none;
+}
+
+.ui-dialog-title{
+    font-size: 15px;
+    width:100%;
+}
+
+.ui-dialog{
+    position: fixed;
+}
+.ui-dialog-content{
+    padding:0 !important;
+}
+
+.ui-dialog-titlebar{
+    background: #efefef !important;
+    border-radius:0px !important;
+    margin: 0 !important;
+    padding-left: 2.6% !important;
+}
+
+.ui-widget-header {
+    border:none !important;
+
+    border-bottom: 1px solid #ccc !important;
+}
+
+.ui-widget-header .btn{
+    font-size: 70%;
+}
+
+.ui-button-text-only .ui-button-text{
+    font-size: 14.5px;
+}
+
+/* Patches from jqnotebook */
+
+/* Style the link-ok icon */
+.jquery-notebook .link-area button.link-ok:after {
+    content: "\f00c";
+}
+
+/* The clear icon to remove all tags */
+.jquery-notebook button.clear:after {
+    content: "\f12d";
+}
+
+/* Float the close icon to the right rather than using absolute position
+    This way it is easier to add otehr icons in the corner
+ */
+ 
+.ui-dialog2 .ui-dialog-titlebar a[role=button], .ui-dialog2 .ui-dialog-titlebar button {
+    position: static;
+    float: right;
+    margin-left: 2px;
+ 
+
+/* Move the close icon nearer to the edge */
+.ui-dialog2 .ui-dialog-titlebar {
+    padding: .3em;
+}

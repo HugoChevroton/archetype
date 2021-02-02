@@ -1,0 +1,7 @@
+<div class="alert alert-warning">
+    {% if message %}
+        {{ message }}
+    {% else %}
+        No {{ type|title }} associated to this record
+    {% endif %}
+</div>

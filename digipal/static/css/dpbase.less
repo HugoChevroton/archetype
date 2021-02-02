@@ -1,0 +1,891 @@
+// TOP STRUCTURE
+// ALLOW_IMPORT
+
+@import "../digipal/css/dpvars_bs.less";
+
+html, body {
+    height: 100%;
+}
+
+.resp-container {
+    display: table;
+    width: 100%;
+    height: 100%;
+}
+
+.resp-block {
+    display: table-row;
+    height: 1px;
+}
+.resp-push {
+    height: auto;
+}
+
+// FOOTER
+
+footer.footer {
+
+    //background-color: rgb(249, 249, 249);
+    background-color: #dddddd;
+    border: 1px dotted rgba(0, 0, 0, 0.1);
+    font-size: 11px;
+
+    div.container {
+        padding-top: 1em;
+    }
+
+    div.row > div {
+        text-align: center;
+        margin: 0;
+        margin-bottom: 1.5em;
+
+        p {
+            line-height: 15px;
+            margin: 0;
+
+            @media (max-width: 992px) {
+                text-align: center;
+            }
+        }
+
+        img {
+            padding: 2%;
+        }
+
+        .fa {
+            font-size: 25px;
+
+            -webkit-transition-property:color;
+            -moz-transition-property:color;
+            -ms-transition-property:color;
+            -o-transition-property:color;
+            -webkit-transition-duration:0.35s;
+            -moz-transition-duration:0.35s;
+            -ms-transition-duration:0.35s;
+            -o-transition-duration:0.35s;
+            color: #5a5a5a;
+
+            .fa-twitter:hover {
+                color: #2c77ba;
+            }
+
+            .fa-github:hover {
+                color: #fff;
+                background: #5a5a5a;
+                border-radius: 10px;
+            }
+        }
+
+    }
+
+}
+
+/* end footer */
+
+/* general rules */
+
+html {
+    position: relative;
+}
+
+body {
+    color: #5a5a5a;
+    padding-top: 0;
+    line-height: 1.3;
+}
+
+.long-text {
+    font-size: 15px;
+}
+
+/*
+    restoring Mezzanine 1.5 style
+ */
+p {
+    line-height: 22px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+/*
+    restoring Mezzanine 1.5 style
+ */
+.alert{
+    padding:15px;
+}
+
+#main_body_container{
+    margin-top:1em;
+    margin-bottom: 1em;
+}
+
+.header5{
+    // padding-bottom:0.5%;
+    border-bottom:1px dotted #f5f5f5;
+    line-height: 1.25;
+    font-weight:bold;
+    // padding-top:2%;
+    margin-top: 0;
+    font-size:20px;
+}
+
+.header1 {
+    padding-bottom:0.8%;
+    border-bottom:4px solid #f5f5f5;
+    line-height: 1.25;
+    font-weight:normal;
+    margin-bottom:1%;
+}
+
+h1 {
+    font-size: 28px;
+}
+
+h2 {
+    font-size: 25px;
+}
+
+h3 {
+    font-size: 22px;
+}
+
+h4 {
+    font-size: 18px;
+}
+
+h1, h2, h3, h4{
+    font-weight: normal;
+    margin-top: 0%;
+}
+
+h1,h2,h3,h4,h5,h6 {
+    text-align: left;
+}
+
+.page-header{
+    margin: 10px 0 20px;
+}
+
+/*
+.header1 h1{
+    font-size: 40px;
+}
+
+.header h2{
+    font-size: 31.5px;
+}
+*/
+
+/* This dd is for standard Boostrap rendering */
+.bs dd {
+    margin-top:0;
+    font-size:14px;
+}
+
+dd{
+    margin-top:3%;
+    font-size:13px;
+}
+
+img{
+    box-shadow: none;
+    max-width:100%;
+    height:auto;
+}
+
+.block{
+    clear:both;
+}
+
+/* Why, oh why setting this globally? */
+label{
+    font-weight: bold;
+}
+
+div.dropdown-checkbox label {
+    font-weight: normal;
+}
+
+/* labels:
+    Any default label within a <a> becomes brown.
+*/
+
+a.label-default[href], a[href] .label-default, .btn-digipal {
+    background: @dp-main;
+}
+
+a[href]:hover .label-default, a[href].label-default:hover,
+a[href]:focus .label-default, a[href].label-default:focus,
+a[href]:active .label-default, a[href].label-default:active {
+    background: @link-hover-color;
+    text-decoration: none;
+}
+
+/* END labels */
+
+.login-container{
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+}
+
+.form-signin {
+    max-width: 300px;
+    padding: 19px 29px 29px;
+    margin: 0 auto 20px;
+    background-color: #fff;
+    border: 1px solid #e5e5e5;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+
+/*
+.nav-tabs.nav-stacked li, .nav-tabs.nav-stacked a {
+    line-height: 1;
+}
+
+.nav-tabs.nav-stacked .active a, .nav-tabs.nav-stacked li a:hover{
+    background: url('/static/digipal/images/nav_bg.png');
+    color: #fff;
+    line-height: 1;
+}
+
+*/
+
+#socialLogos li{
+    padding-right: 3%;
+    cursor: pointer;
+}
+
+.tab-content{
+    overflow: hidden;
+}
+
+blockquote{
+    /* border-bottom: 1px dotted #efefef; */
+    font-size: 15px;
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+    margin-left: 25px;
+    padding-left: 10px;
+    margin-bottom: 15px;
+}
+
+
+/* ... except icons used as link */
+.btn-link .glyphicon {
+    color: #5e5e5e;
+}
+
+.span2 .panel .image{
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-left:0;
+    padding-left:0;
+}
+
+.breadcrumb{
+    margin: 0 0 1em;
+}
+
+.breadcrumb a{
+    font-weight: normal;
+}
+
+.breadcrumb a:hover{
+    text-decoration: line-through;
+}
+
+.breadcrumb a.clear-all {
+    float: right;
+}
+
+.breadcrumb a.clear-all:hover{
+    text-decoration: underline;
+}
+
+a.btn:hover {
+    background-color: @dp-main;
+    color: @dp-menu-color;
+}
+
+/*
+.btn {
+    font-weight: bold;
+}
+ */
+
+/*
+.nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus {
+    background-color: #EEEEEE;
+    color: #555555;
+}
+*/
+
+/*
+li.active > a{
+    cursor: text;
+}
+*/
+
+.tab-content {
+    overflow: visible;
+}
+
+#twitter-widget-0{
+    vertical-align: bottom;
+}
+
+
+/*
+.view_button{
+    padding-top: 8px;
+    padding-bottom: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    background: #eee;
+    padding-right: 12px;
+    padding-left: 12px;
+    margin-right: 2px;
+    line-height: 2.5;
+    border-radius: 3.5px;
+    border: 1px solid #E0C4BE;
+}
+
+.view_button.small {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    // font-size: 100%;
+    line-height: 1.5em;
+}
+
+.view_button:hover {
+    color: #fff !important;
+    background: url('/static/digipal/images/nav_bg.png');
+    text-decoration: none;
+}
+*/
+
+.table-condensed th, .table-condensed td {
+    padding: 1%;
+}
+
+table.table tr.odd td {
+    background-color: rgb(249, 249, 249);
+}
+table.table tr.even td {
+    background-color: transparent;
+}
+
+#basket_collector, #basket_collector_2{
+    position: fixed;
+    left: 0;
+    bottom: -28%;
+    width: 100%;
+    height: 27%;
+    background: #fff;
+    color: #444;
+    font-size: 23px;
+    line-height: 2;
+    text-align: center;
+    font-weight: bold;
+    z-index: 1000;
+    -webkit-box-shadow: 1px 0px 8px 3px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 1px 0px 8px 3px rgba(0, 0, 0, 0.2);
+    -ms-box-shadow: 1px 0px 8px 3px rgba(0, 0, 0, 0.2);
+    -o-box-shadow: 1px 0px 8px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: 1px 0px 8px 3px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip{
+    z-index: 5000;
+}
+
+#basket_collector:hover,  #basket_collector_2:hover{
+    background: rgba(255, 255, 255, 0.8);
+}
+
+#basket_collector p {
+    margin-top: 3em;
+}
+
+.droppable_image{
+    z-index:1000;
+}
+
+.record-list li {
+    list-style: none;
+}
+
+.basket_url {
+    background: #eee;
+    border: 1px solid #ccc;
+    line-height: 2;
+    padding: 1.9%;
+    border-radius: 3px;
+}
+
+.smaller p, .smaller ul, a.smaller, .imageDetails a.smaller {
+    font-size: 85%;
+    line-height: 18px;
+    margin-bottom: 8px;
+}
+
+.justified {
+    text-align: justify;
+}
+
+
+.centered {
+    text-align: center;
+}
+
+ul.flat-list {
+    margin-top: 0px;
+    padding-left: 0;
+    display: inline;
+}
+
+.flat-list li {
+    display: inline;
+    list-style: none outside none;
+    margin-right: 5px;
+}
+
+.flat-list select, .flat-list input {
+    width: 220px;
+}
+
+.annotations_count_images{
+    line-height:1.8em;
+}
+
+.annotations_count_images a.label-default:hover{
+    color: #fff;
+    text-decoration: none;
+}
+
+.image a {
+    font-weight:bold;
+}
+
+.visible {
+    display: block;
+}
+
+.ul_inline_form{
+    padding:0;
+    line-height: 1;
+    display: inline;
+}
+
+.ul_inline_form li {
+    list-style-type: none;
+    display:inline;
+}
+
+.modal-body .ul_inline_form {
+    margin:1.5%;
+    display: block;
+}
+
+/*
+.nav-stacked>li+li{
+    margin-top:0;
+}
+*/
+
+/*
+.nav-stacked>li>a{
+    border:1px solid #efefef;
+}
+*/
+
+/* pagination */
+
+.pagination {
+    margin:15px;
+    margin-left:0;
+}
+
+.btn-group .pagination {
+    margin: 0;
+}
+
+.pagination .ellipsis a {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+/*
+.pagination > li > a:focus, .pagination > li > a:hover {
+    background-color: #a1514d;
+    color: #fff;
+}
+
+.pagination > .active > a, .pagination > .active > a:hover {
+    background-color: #eee;
+    color: #555555;
+}
+
+.pagination>.active>a, .pagination>.active>span, .pagination>.active>a:hover, .pagination>.active>span:hover, .pagination>.active>a:focus, .pagination>.active>span:focus {
+    border-color: #ccc;
+}
+*/
+
+/* END pagination */
+
+.tab-content{
+    padding-top:1.5%;
+}
+
+
+.btn-digipal:hover, .btn-digipal:focus{
+    color: #eee;
+}
+
+#top_row{
+    margin-right: 0;
+}
+
+#footer_logos a {
+    margin-right: 0.3em;
+    margin-left: 0.3em;
+}
+
+.left-panel{
+    border-right:1px solid #f5f5f5;
+    border-top:1px solid #f5f5f5;
+    border-top-right-radius: 5px;
+    padding-right: 3%;
+}
+
+
+form.panel {
+    border-color: @dp-input-border;
+}
+
+a.link-icon, a.link-icon:hover {
+    text-decoration: none;
+}
+
+.dropdown-menu>li>a {
+    color:#333;
+    padding-left: 0.7em;
+    padding-right: 0.5em;
+
+    span.glyphicon {
+        margin-right: 0.3em;
+    }
+}
+
+.has-margin-top{
+    margin-top: 0.5em;
+}
+
+.panel {
+    background: rgba(220,220,220, 0.1);
+    padding: 10px 20px;
+    margin-bottom: 20px;
+    /* line-height: 170%; */
+    border: 1px solid #eee;
+    border-radius: 5px;
+}
+
+.panel.labels-list {
+    // allographs list on the annotation tab
+    line-height: 1.6em;
+    .label {
+        margin-right: 0.2em;
+    }
+}
+
+.form-control:focus, .form-control:active {
+    border-color: @dp-input-border;
+    outline: 0;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px @dp-shadow-color;
+    //-webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(161, 81, 77, 0.6);
+    //box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(161, 81, 77, 0.6);
+}
+
+
+.row-no-margin{
+    margin:0;
+}
+/* pager on the MS/Hand/Scribes record pages tends to break easily
+because it spreads across a column. */
+
+.pager.compact a {
+    float: none;
+}
+
+.pager.compact {
+    text-align: left;
+}
+
+@media (min-width: @screen-md-min) {
+
+    .pager.compact {
+        float: right;
+    }
+
+    .pull-right-md {
+        float: right;
+    }
+
+}
+
+/* 3D effect to the primary buttons */
+
+@dp-main-3d-from:   lighten(@dp-main, 20%);
+@dp-main-3d-to:     darken(@dp-main, 8%);
+
+.btn-primary {
+    background-color: @dp-main !important;
+    background-repeat: repeat-x;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="@dp-main-3d-from", endColorstr="@dp-main-3d-to");
+    background-image: -khtml-gradient(linear, left top, left bottom, from(@dp-main-3d-from), to(@dp-main-3d-to));
+    background-image: -moz-linear-gradient(top, @dp-main-3d-from, @dp-main-3d-to);
+    background-image: -ms-linear-gradient(top, @dp-main-3d-from, @dp-main-3d-to);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, @dp-main-3d-from), color-stop(100%, @dp-main-3d-to));
+    background-image: -webkit-linear-gradient(top, @dp-main-3d-from, @dp-main-3d-to);
+    background-image: -o-linear-gradient(top, @dp-main-3d-from, @dp-main-3d-to);
+    background-image: linear-gradient(@dp-main-3d-from, @dp-main-3d-to);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.49);
+}
+
+@dp-main-3d-hover-from:   darken(@dp-main-3d-from, 10%);
+@dp-main-3d-hover-to:     darken(@dp-main-3d-to, 10%);
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+    background-color: darken(@dp-main, 6.5%) !important;
+    background-repeat: repeat-x;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="@dp-main-3d-hover-from", endColorstr="@dp-main-3d-hover-to");
+    background-image: -khtml-gradient(linear, left top, left bottom, from(@dp-main-3d-hover-from), to(@dp-main-3d-hover-to));
+    background-image: -moz-linear-gradient(top, @dp-main-3d-hover-from, @dp-main-3d-hover-to);
+    background-image: -ms-linear-gradient(top, @dp-main-3d-hover-from, @dp-main-3d-hover-to);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, @dp-main-3d-hover-from), color-stop(100%, @dp-main-3d-hover-to));
+    background-image: -webkit-linear-gradient(top, @dp-main-3d-hover-from, @dp-main-3d-hover-to);
+    background-image: -o-linear-gradient(top, @dp-main-3d-hover-from, @dp-main-3d-hover-to);
+    background-image: linear-gradient(@dp-main-3d-hover-from, @dp-main-3d-hover-to);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.49);
+}
+
+/* We undo chzn bold on hover otherwise some values in the dropdown will have
+different height depending when they are selected and push the other values down */
+.chzn-results li:hover {
+    font-weight: normal;
+}
+
+.auto-open-wide:hover > ul.dropdown-menu {
+    @media (min-width: @grid-float-breakpoint) {
+        display: block;
+    }
+}
+.auto-open:hover > ul.dropdown-menu {
+    display: block;
+}
+
+.auto-open a {
+    //@media (max-width: @grid-float-breakpoint) {
+        cursor: pointer;
+    //}
+}
+
+
+
+// BootstrapSwitch
+// TODO: use LESS for BSSwitch
+#body .has-switch span.switch-left, #body .has-switch span.switch-primary {
+    background: none repeat scroll 0 0 @dp-main;
+}
+
+div.has-switch.switch-small {
+    min-width: 4.5em;
+}
+
+div.has-switch:focus {
+    border-color: @dp-input-border;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px @dp-shadow-color;
+    outline: 0 none;
+}
+
+// ----
+// Chosen
+
+.chzn-container .chzn-results li.highlighted {
+    background: @dp-main;
+}
+
+.chzn-container .chzn-results li.result-selected {
+    font-weight: bold;
+}
+
+// ----
+
+.row-min-admin{
+    width:70%;
+}
+
+.pagination-group .btn-group {
+    margin-right: -1px;
+    /* margin-top: 15px; */
+    margin-top: 0;
+}
+
+.pagination-group .btn-group .btn {
+    font-weight: normal;
+}
+
+.dialog-background{
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* opacity: 0.5; */
+    background: rgba(0,0,0,0.35);
+    z-index: 1000;
+}
+
+.annotations_count_images > a:hover {
+    text-decoration: none;
+}
+
+.nowrap {
+    white-space: nowrap;
+}
+
+// Force tabs to stack up on small devices
+
+@media (max-width: @screen-xs-max) {
+    .nav-tabs > li {
+        float:none;
+        // border:1px solid #dddddd;
+    }
+    /*
+    .nav-tabs > li.active > a{
+        border:none;
+    }
+    .nav > li > a:hover, .nav > li > a:focus,
+    .nav > li > a:hover, .nav > li > a:focus,
+    .nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus
+     {
+        background:none;
+        border:none;
+    }
+    */
+}
+
+/*
+a[data-toggle="pill"]{
+    cursor:pointer;
+    border-radius: 2px !important;
+}
+*/
+
+.pull-top {
+    vertical-align: top;
+}
+
+.chzn-container:hover a {
+    box-shadow: 0 1px 0 #fff inset;
+    background-color: #eee;
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#ffffff', GradientType=0 );
+    background-image: -webkit-gradient(linear, 0 0, 0 100%, color-stop(20%, #eeeeee), color-stop(80%, #ffffff));
+    background-image: -webkit-linear-gradient(top, #eeeeee 20%, #ffffff 80%);
+    background-image: -moz-linear-gradient(top, #eeeeee 20%, #ffffff 80%);
+    background-image: -o-linear-gradient(top, #eeeeee 20%, #ffffff 80%);
+    background-image: linear-gradient(#eeeeee 20%, #ffffff 80%);
+}
+
+.top-1-em {
+    margin-top: 1em;
+}
+
+.disabled {
+    cursor: not-allowed !important;
+}
+
+.digipal-doc a[name] {
+    color: #5A5A5A;
+}
+
+.digipal-doc code {
+    color: #333;
+    background-color: #F5F5F5;
+}
+
+.dp-small {
+    font-size: small;
+}
+
+#info-div table tr td {
+    padding: 2px;
+}
+
+.link-internal {
+    &:before {
+        font: normal normal normal 14px/1 FontAwesome;
+        font-size: inherit;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        content: "\f14c";
+    }
+
+    &:hover, &:focus {
+        text-decoration: underline;
+    }
+}
+
+.nav > li > a.link-internal, .nav > li > a.link-external {
+    &:hover, &:focus {
+        text-decoration: underline;
+        background-color: transparent;
+    }
+}
+
+.link-external {
+    &:before {
+        font: normal normal normal 14px/1 FontAwesome;
+        font-size: inherit;
+        text-rendering: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        content: "\f08e";
+    }
+
+    &:hover, &:focus {
+        text-decoration: underline;
+    }
+}
+
+/* BS Tooltip preserve line breaks */
+.tooltip-inner {
+    white-space:pre-wrap;
+}
+
+.img-responsive-ie {
+    // forces image to be really responsive in IE9
+    width: 100%;
+}
+
+// move drop down a bit higher so there is no hover gap
+.dropdown-checkbox div.dropdown-checkbox-content {
+    top: 97%;
+}
+
+.force-inline {
+    display: inline-block;
+    p, div {
+        display: inline-block;
+    }
+}

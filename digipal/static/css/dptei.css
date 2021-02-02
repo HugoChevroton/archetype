@@ -1,0 +1,84 @@
+/* TEI conversion 
+
+Supported elements:
+    c, foreign, div, title[@level=m], hi[@rend=sup], list[@type=ordered|bulleted|simple|], item
+    c, foreign, hi[@rend=sup], hi[@rend=smallcap], title
+
+*/
+
+.tei-c{
+    font-weight: bold;
+}
+
+.tei-foreign, span[data-dpt=foreign] {
+    font-style: italic;
+}
+
+.tei-div{
+    display: block;
+    margin-top: 1em;
+}
+
+.tei-title, span[data-dpt=title] {
+    font-style: italic;
+}
+
+.tei-hi.tei-a-rend__sup, span[data-dpt-rend=sup] {
+    vertical-align: super;
+    font-size: smaller; 
+}
+
+.tei-hi.tei-a-rend__sup, span[data-dpt-rend=smallcap] {
+    /*
+    text-transform: uppercase;
+    font-size: small;
+    */
+    font-variant: small-caps; 
+}
+
+.tei-list {
+    margin: 1.12em 0;
+    margin-top: 0; 
+    margin-bottom: 0;
+    margin-left: 40px;
+    display: block; 
+    unicode-bidi: embed;
+    list-style-type: none;
+}
+
+.tei-list.tei-a-type__ordered{
+    list-style-type: decimal;
+}
+
+.tei-list.tei-a-type__bulleted{
+    list-style-type: disc;
+}
+
+.tei-item {
+    display: list-item;
+}
+
+/* New scheme */
+
+span[data-dpt=heading][data-dpt-level='1'] {
+    font-weight: normal;
+    font-size: 18px;
+}
+
+span.locus-not-found {
+    background-color: pink;
+}
+
+span.locus-not-found:before {
+    content: "?";
+    font-family: "Arial Black",Gadget,sans-serif;
+    font-size: 100%;
+    font-weight: bold;
+    margin-top: -0.9em;
+    position: absolute;
+}
+
+span[data-dpt-model=character] {
+    font-weight: bold;
+    font-style: italic;
+}

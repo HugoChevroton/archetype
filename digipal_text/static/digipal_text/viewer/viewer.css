@@ -1,0 +1,324 @@
+#main_body_container { width: 100%; }
+
+/*
+span.message-time {
+    padding: 0.3em;
+}
+*/
+
+/* PANEL */
+
+#text-viewer-panel {
+    display: none;
+}
+
+.panel-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+}
+
+.panel-content .mask {
+    background-color: white;
+    width: 100%;
+    height: 0;
+    opacity: 0.5;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    display: block;
+    cursor: not-allowed;
+}
+
+.ui-layout-pane {
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.text-viewer-panel {
+    height: 100%;
+}
+
+/* Align the buttons in the panel navbar with the chosen drop downs */
+
+.text-viewer-panel ul.nav > li > a {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+
+/* TOOL BAR */
+
+.text-viewer-panel .btn-toolbar {
+    background-color: #f8f8f8;
+    border-bottom: 1px solid lightgrey;
+    /* height: 2.2em;
+    overflow: hidden; */
+}
+
+.text-viewer-panel .btn-toolbar .btn {
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    color: #777;
+}
+
+.dropdown-menu {
+    /* Close the gap between dropdown list and the button above
+       To avoid the list from closing when the mouse goes into the gap */
+    top: 87%;
+}
+
+.auto-open:hover .btn {
+  background-color: #e7e7e7;
+}
+
+.text-viewer-panel .btn-toolbar .btn:hover {
+    background-color: #e7e7e7;
+}
+
+li.bsdp-selected a {
+    font-weight: bold;
+}
+
+ul.dropdown-menu.dpbs-clicked {
+    display: none;
+}
+
+.glyphicon.glyphicon-entry:before {
+    content: "\25BC";
+}
+
+.glyphicon.glyphicon-section:before {
+    content: "\00A7";
+}
+
+/* Means that the element is initially hidden
+    But can be overridden by JQ .toggle()
+*/
+.dphidden {
+    display: none;
+}
+
+.btn-toolbar .chzn-container {
+    /* width: 10em !important; */
+    width: auto !important;
+    margin-top: 1px !important;
+    margin-bottom: 1px !important;
+    float: left;
+}
+
+.btn-toolbar .linker .chzn-container {
+    width: 15em !important;
+}
+
+.text-viewer-panel .btn-toolbar .chzn-container-single .chzn-single {
+    font-size: 10px;
+}
+
+.btn-toolbar .chzn-container-single.disabled .chzn-single {
+    background: none;
+    border: none;
+}
+
+.btn-toolbar .chzn-container-single.disabled .chzn-single div {
+    display: none;
+}
+
+/* fixes */
+/* right nav on each panel overflows to the right, reduced BS margin-right */
+/*
+.text-viewer-panel .navbar-nav.navbar-right:last-child {
+    margin-right: -6px;
+}
+
+.text-viewer-panel .dropdown-menu .glyphicon {
+    padding-right: 0.4em;
+}
+*/
+
+/* Reduce Tinymce drop down width */
+
+.mce-btn-group .mce-menubtn.mce-fixed-width span {
+    width: auto;
+}
+
+.mce-tinymce.mce-container.mce-panel {
+    border: 0px !important;
+}
+
+.location-description {
+    padding-left: 0.5em;
+    line-height: 2em;
+}
+
+/* STATUS BAR */
+
+.status-bar {
+    padding: 0.3em;
+    border-top: 1px solid lightgrey;
+    font-size: 12px;
+    font-family: "Lucida Console", Monaco, monospace;
+}
+
+.status-bar {
+    min-height: 2em;
+    max-height: 1em;
+    overflow-y: hidden;
+    background-color: #f8f8f8;
+}
+
+.status-bar span {
+    /* padding-left: 0.3em; */
+}
+
+/* MESSAGE BOX - not used */
+
+div.message-box {
+    border: 1px solid lightgrey;
+    border-radius: 10px;
+    margin: 0.5em;
+    padding: 0.5em;
+    color: green;
+    background-color: white;
+}
+
+div.message-box.message-error {
+    color: pink;
+}
+div.message-box.message-warning {
+    color: orange;
+}
+div.message-box.message-info {
+    color: green;
+}
+
+span.message-error {
+    color: red;
+}
+
+
+/*
+#container input.sbm-change {float: left;}
+#context-div ul {margin-left: 2em;}
+#context-div ul li {
+    list-style-type: disc;
+}
+
+#context-div li.collapsed ul {
+    display: none;
+}
+
+div#side-panel {
+    display: none;
+}
+
+
+.panel {
+    border: 1px solid grey;
+}
+
+#panel-viewer {
+    height: 400px;
+}
+
+#image-list {
+    width: 15em;
+    border-right: 1px solid grey;
+    float:left;
+    height: 100%;
+}
+
+#image-viewer {
+    height: 100%;
+    float: left;
+}
+*/
+
+.page-text-viewer #quick-search {
+    display: none;
+}
+.page-text-viewer .footer {
+    display: none;
+}
+.page-text-viewer .footer.mini-footer {
+    display: block;
+}
+
+.page-text-viewer nav.primary-nav .navbar-header {
+    height: auto;
+}
+.page-text-viewer nav.primary-nav .navbar-toggle {
+    top: auto;
+    padding: 3px 10px;
+    margin-top: 3px;
+}
+.page-text-viewer nav.primary-nav .navbar-header .navbar-brand {
+    top: auto;
+}
+@media (min-width: 768px) {
+    .page-text-viewer nav.primary-nav .navbar-header .navbar-brand {
+        display: none;
+    }
+}
+
+.page-text-viewer #logo {
+    line-height: 1em;
+    font-size: 24px;
+}
+
+body.page-text-viewer {
+    height: auto;
+}
+
+.page-text-viewer h1 {
+    font-size: 18px;
+}
+
+.dpauto-hide {
+    display: none;
+}
+
+.btn-toolbar:hover .dpauto-hide {
+    display: inline;
+}
+
+.btn-toolbar:hover .dpauto-hide.dphidden {
+    display: none;
+}
+
+
+.rotate-north {
+  top: 65px;
+  left: .5em;
+}
+.ol-touch .rotate-north {
+  top: 80px;
+}
+
+.location-buttons .btn-page-nav i {
+    /* font-size: 1.3em;
+    padding: 1px 10px; */
+}
+
+.ui-layout-above.ui-layout-pane-above {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.chzn-container .chzn-results li.linked {
+    color: blue;
+}
+
+.chzn-container .chzn-results li.unlinked {
+    color: orange;
+}
+
+/* attributions */
+
+.text-attribution {
+    text-align: center;
+    font-weight: 600;
+    font-size: larger;
+}

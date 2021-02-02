@@ -1,0 +1,147 @@
+{% load mezzanine_tags pagination_tags hand_filters %}
+{% load html_escape %}
+{# {annotations_list} #}
+{% if annotations_list %}
+
+    {% if can_edit %}
+        <div id="switcher" class='pull-right'>
+            <label for="toggle-annotations-mode">Annotating mode</label>
+            <input data-toggle="tooltip" title='Annotating Mode' id="toggle-annotations-mode" type="checkbox" />
+        </div>
+    {% endif %}
+    <!-- if there are at least 2 annotated hands, show the list -->
+    {% if annotations_list.keys|length > 1 %}
+
+        <div class="container">
+
+            <h3>Hands List</h3>
+            <!-- links to hands -->
+            <ul>
+                {% for key in annotations_list %}
+
+                    <li>
+                        <b>
+                            <a data-toggle='tooltip' data-placement='right' title='Go to {{key}}' href='#{{key|anchorify}}'>{{key}}</a>
+                        </b>
+                    </li>
+
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% for key, allographs in annotations_list.items %}
+        <div>
+            <!-- hand record -->
+            <h2 id='{{key|anchorify}}' class='header1'>
+                {% comment %}
+                    {# No need to repeat MS shelfmark and locus, already in the main heading #}
+                    <b>Hand</b>: {% if image.item_part.pagination %}Page{% else %}Folio{% endif %}:
+                    {{image|capfirst}}
+                    -
+                {% endcomment %}
+                {{ key }}
+            </h2>
+
+            <h3>Allographs List</h3>
+
+            <div class="panel labels-list">
+                <!-- links to allographs -->
+                {% for allograph, graphs in allographs.items %}
+                    <a data-toggle='tooltip' title='Go to {{allograph}}' href='#{{key.id}}_{{allograph.id|anchorify}}_{{allograph|anchorify}}' class="label label-default">
+                        {{ allograph }}
+                    </a>
+                {% endfor %}
+            </div>
+
+        </div>
+
+        <!-- allographs -->
+
+        <div class="allographs-list {% if can_edit %} allograph-list-admin {% endif %}">
+            {% for allograph, annotations in allographs.items %}
+                <div class="allograph-item panel">
+
+                    <h5 class='header5 pull-left' id='{{key.id}}_{{allograph.id|anchorify}}_{{allograph|anchorify}}'>
+                        {{  allograph }}
+                    </h5>
+
+                    <div class='btn-group buttons_annotations_list'>
+                        <button data-container='body' data-toggle='tooltip' title='Add selected graphs to collection' class='btn btn-default btn-small to_lightbox' disabled>
+                            <i class='glyphicon glyphicon-star unstarred'></i>
+                        </button>
+        
+                        <button data-container='body' data-toggle='tooltip' title='Select all the annotations' data-key = '{{key.id}}_{{allograph.id|anchorify}}_{{allograph|anchorify}}' class='btn btn-default btn-small select_all'>
+                            <i class='fa fa-check-square-o'></i>
+                        </button>
+        
+                        <button data-container='body' data-toggle='tooltip' title='Unselect all the annotations' data-key = '{{key.id}}_{{allograph.id|anchorify}}_{{allograph|anchorify}}' class='btn btn-default btn-small deselect_all'>
+                            <i class='fa fa-square-o'></i>
+                        </button>
+                    </div>
+
+                    <!-- ul hand -->
+                    <div data-group='true' data-allograph='{{allograph}}' class="list-allographs" data-key = '{{key.id}}_{{allograph.id|anchorify}}_{{allograph|anchorify}}'>
+        
+                        {% for annotation in annotations %}
+            
+                            {% if forloop.counter0|divisibleby:6 and forloop.counter > 5 %}
+            
+                            {% endif %}
+
+                                {% if 1 %}
+                                    <div class="folio-image-wrapper">
+                                        <!-- annotation -->
+                                        <div data-add-star='true' data-toggle='tooltip'
+                                            {% if can_edit %}title="Edit graph"{% endif %} data-container='body'
+                                            class='annotation_li droppable_image' data-graph = "{{ annotation.graph.id }}"
+                                            data-image-id="{{ annotation.image_id }}" data-type ='annotation'
+                                            data-allograph="{{ annotation.graph.idiograph.allograph.id }}" >
+                
+                                            <p>
+                                                {% if can_edit %}
+                                                    <!-- graph number -->
+                                                    <span id='label_{{ annotation.graph.id }}' data-graph-id = "{{ annotation.graph.id }}" class='label label-default'>{{forloop.counter}}</span>
+                    
+                                                {% endif %}
+                                            </p>
+
+                                            {%if 0%}
+                                                <a data-placement='right' data-toggle='tooltip' href='{{annotation.image.get_absolute_url}}?graph={{annotation.graph.id}}' data-graph = '{{ annotation.graph.id }}' class='' title="View graph in the manuscript viewer">
+                                                    {% annotation_img annotation lazy=1 %}
+                                                </a>
+                                            {% else %}
+                                                {% annotation_img annotation lazy=1 link=annotation.graph a_title="View graph in the manuscript viewer" a_data_toggle="tooltip" %}
+                                            {% endif %}
+                    
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {# TODO #}
+                                    {% annotation_img annotation lazy=1 link=annotation.graph wrap=annotation.graph a_title=graph.get_short_label a_data_container="body" %}
+                                {% endif %}
+            
+                        {% endfor %}
+                    </div>
+        
+                </div>
+            {% endfor %}
+    
+        </div>
+    {% endfor %}
+
+    <div>
+      <a id='ontop' href='#top' data-toggle='tooltip' title='Back to Top'>
+        <i class='fa fa-arrow-up'></i>
+      </a>
+    </div>
+
+{% else %}
+
+    {% include "digipal/empty_tab.html" with type="annotation" %}
+
+{% endif %}
+
+{% comment %}
+    {% include "digipal/add_to_collection.html" %}
+{% endcomment %}

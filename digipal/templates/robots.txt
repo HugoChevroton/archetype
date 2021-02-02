@@ -1,0 +1,11 @@
+User-agent: *
+{% if debug %}
+Disallow: /
+{% else %}
+Disallow: /admin/
+Disallow: /digipal/search/
+
+{% if sitemap_url %}
+Sitemap: {{ sitemap_url }}
+{% endif %}
+{% endif %}

@@ -1,0 +1,99 @@
+. Upload new upgraded image of DP on Dockerhub
+    WIP. reorganise the Dockerfile
+    . main issues:
+        [done] indexing using backend interface
+    . better architecture:
+        [done]. only one port for all web services: image server and web
+            [done] nginx for django
+            [done] nginx for iipserver
+            [done] nginx for static and media
+        . externalise the data?
+            . images
+            . database
+            . settings
+            . cutomisations?
+    . initial content:
+        . One image, MS, etc.
+        . footer
+        . banner
+        . intro
+        . blog, news
+        . enable lightbox
+*. Provide upgrade instructions from version 1 to new version
+    . docker upgrade
+    * . DP upgrade
+        . save everything and reload it?
+            . settings + DB + Images
+    .
+. Re-enable the backend editing of the settings
+. Test installation with Kitematic
+    . On Windows
+    . On Mac
+    . On Linux?
+
+    . Nested installation: Ubuntu > Windows 10 > X doesn't work because of the
+        (virtualised) hardware doesn't allow it. Some say that it is not yet
+        possible with 64bits guest.
+
+
+Permissions:
+
+    root@dad99f8cff7a:/home# chown -R www-data:www-data digipal
+    root@dad99f8cff7a:/home# chmod -R ug+r digipal
+    root@dad99f8cff7a:/home# chmod -R ug+w digipal
+    root@dad99f8cff7a:/home# chmod -R o-rw digipal
+
+    apt-get install nginx uwsgi-plugin-python
+
+    #uwsgi --http-socket :8080 --uid=www-data --gid=www-data --plugin /usr/lib/uwsgi/plugins/python_plugin.so --wsgi-file digipal/wsgi.py
+    uwsgi --ini /home/digipal/digipal/wsgi.template.ini
+
+    ln /home/digipal/build/nginx.conf /etc/nginx/sites-enabled/digipal.conf
+
+
+LOGFILE="/tmp/iipsrv.log"
+VERBOSITY="10"
+MAX_IMAGE_CACHE_SIZE="20"
+JPEG_QUALITY="75"
+MAX_CVT="800"
+FILESYSTEM_PREFIX="/home/digipal/images/"
+
+export LOGFILE
+export VERBOSITY
+export MAX_IMAGE_CACHE_SIZE
+export JPEG_QUALITY
+export MAX_CVT
+export FILESYSTEM_PREFIX
+
+
+
+local_settings.py:
+    IMAGE_SERVER_HOST = 'digipal-stg.cch.kcl.ac.uk'
+    IMAGE_SERVER_ZOOMIFY = 'https://%s%s?zoomify=%s/'
+    IMAGE_SERVER_PATH = '/iip/iipsrv.fcgi'
+    IMAGE_SERVER_URL  = 'https://%s%s' % (IMAGE_SERVER_HOST, IMAGE_SERVER_PATH)
+
+iipimage/storage.py:105
+    .base_url = ...
+        full_base_url()
+            url()
+
+C
+    S:P1/iip
+    ->
+        S
+            iip...
+    S:P1
+    ->
+        S
+            nginx-django
+            -> () req img dim to ? (! won't work on)
+        <-
+
+
+- Removed setting of self.cutout in annotation.save()
+- annotation.get_cutout_url calls get_cutout_url_info
+
+
+Dockerhub:
+    versioning? upgrade new image as v 2.0 but old one remains accessible?

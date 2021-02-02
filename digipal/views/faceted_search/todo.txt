@@ -1,0 +1,393 @@
+http://localhost:8080/digipal/search/facets/?view=grid&page=1&result_type=images
+http://localhost:8080/digipal/search/facets/?sort=-&result_type=images&page=1&view=grid
+http://localhost:8080/digipal/search/facets/?sort=-&view=grid&result_type=images&page=1
+
+Apply visualisation to EXON.
+
+Example: point, x,y
+    [u'506r', u'Transcription (Sample)']
+    [u'506r', u'Transcription (Sample)', set([0]), u"<tr><td>Entry</td><td>506a5</td></tr><tr><td>Entry Type</td><td>[u'TO']</td></tr><tr><td>Text Type</td><td>Transcription (Sample)</td></tr><tr><td>Shire</td><td>[u'Devon']</td></tr><tr><td>Hundred</td><td>None</td></tr><tr><td>Vill</td><td>[u'Exeter']</td></tr><tr><td>Place name</td><td>None</td></tr><tr><td>TIC (1086)</td><td>None</td></tr><tr><td>Hand</td><td>[u'epsilon']</td></tr><tr><td>Quire</td><td>None</td></tr>", u'/digipal/manuscripts/1/texts/view/?center=transcription-sample/entry/506a5/&east=translation/sync/transcription-sample/&north=image/sync/transcription-sample/#text-viewer', u'506a5', '']
+    [u'527r', u'Transcription (Sample)']
+    [u'527r', u'Transcription (Sample)', set([0]), u"<tr><td>Entry</td><td>527a1</td></tr><tr><td>Entry Type</td><td>[u'GA']</td></tr><tr><td>Text Type</td><td>Transcription (Sample)</td></tr><tr><td>Shire</td><td>[u'Somerset']</td></tr><tr><td>Hundred</td><td>[u'From\\xe6']</td></tr><tr><td>Vill</td><td>None</td></tr><tr><td>Place name</td><td>None</td></tr><tr><td>TIC (1086)</td><td>None</td></tr><tr><td>Hand</td><td>None</td></tr><tr><td>Quire</td><td>None</td></tr>", u'/digipal/manuscripts/1/texts/view/?center=transcription-sample/entry/527a1/&east=translation/sync/transcription-sample/&north=image/sync/transcription-sample/#text-viewer', u'527a1', '']
+
+    http://localhost/digipal/search/facets/?q3_vcat=hand&q2_vz_gs=40&vill=Exeter&pgs=100000&vcat=hand&vz_bh=10&q3_vz_gs=40&q3_terms=bishop&q3___Redraw=Redraw&q2_vz_bh=10&q2___Redraw=Redraw&q2_wr=0&q3_pgs=100000&q3_view=overview&q2_view=overview&text_type=Translation&q2_result_type=entries&vz_gs=40&q3_entry_type=TO&wr=0&q2_vcat=text_type&q2_text_type=Translation&entry_type=TO&q3_text_type=Translation&result_type=entries&q2_entry_type=TO&q2_pgs=100000&q3_result_type=entries&q3_wr=0&q3_vz_bh=10&page=1&view=overview
+
+[done] add clauses to collection
+    [done] fix the position of the star
+    (). fix the slow UI when hovering images and stars
+    [done] create new section on the collection page for TA
+    [done] fix the link to the unit
+        . template in settings
+        . replace itempart id and sublocation (get them from TA)
+    [done] fix the label
+        . from TA
+    [done] use annotation_img
+    [done] generalise to any type of textunit
+    [done] fix the labels
+    . test sorting
+    [done] fix selection in collection
+    . send to lightbox
+
+    [done] test in MoA
+
+.
+
+Import new version of the transcription
+Entry number not showing in the text viewer
+add preview entry
+fix search
+    fix the highlight
+    O〈sbernus〉
+    C〈odulfus〉
+     r〈ex〉
+  Ansge-|rus
+  pa〈r〉te
+
+images
+    hands missing for some images -> script to regen from stints in hands desc.
+        AND the corrected stints hardcoded in the hands-entries script
+    hand not showing for entry 1a1, why?
+
+--
+
+ But yes, something which enabled two features of diplomatic to be searched
+  would be excellent, so you could see (say) how many charters which had a
+  particular form of address also had sciatis quod.
+
+Visualisation
+    [done] date ranges
+        [done] add migration for new col hi.date_sort
+        [done] import file to repo
+        [done] add migration to import date into db
+        [done] use HI.get_date_sort() in the faceted search
+        [done] use fct to return hi.date_sort OR hi.date
+    ### 3. LAYERS/Multi-search
+        => proper way to solves many issues in the code and visualisation
+        => solves OR with <> cols
+        => partially solves colors for dif cat
+        . chose between all records in DB or all records with graph/clause
+        . server
+            . prepare layers
+            [done] single stack
+        . client
+            . layers list
+                . add/remove
+                . hide/show
+            . coloring
+            . info
+            . histogram
+    . texts
+    . vis control panel
+        [done] size bars
+        [done] size graphs
+        . opacity graphs
+
+    [done]. graphs
+        [done]. #### COLLAPSING
+        . red/grey
+        . counts
+    2. info:
+        [done] one sample graph per bar
+        . info box
+            . other graphs
+            . clause or text
+        . show sample text
+            . with highlight
+    [done]. histogram
+        [done] move x axis below all categories
+        [done] compute histogram on server side
+        [done] show histogram
+        [done] show all greys
+        [done] bars
+        . optimise the format: nested array instead of nested dicts
+    [done] selection highlight projected on histogram
+    . sums
+    !!! make sure histgram layers are sorted by count otherwise the grey will cover other colors
+
+. not logged in: full res (bars) should exclude private images (e.g. graphs)
+
+DONE 1. image size too big on moa (all)
+2. 500 error (why? try the new iipsrv)
+3. pink images
+4. the popover
+
+New version doc:
+    |
+    numbers:
+        lowercase
+        1 -> i
+        dots
+    q could become q[u]
+    point 8: m[od]o0
+
+Point 5
+
+
+Cannot see dorse image on the text editor:
+`   1. is_full_res_for_user(request) returns false despite beign logged in as staff
+        doesn't match the list of visible images returned by get_visible_images()
+    2. the return location is wrong, it should be updated when we get the first image with correct permissions
+        FIXED
+    3. the
+
+
+BANNER
+    [DONE] less tall
+    [DONE] fix sub title layout
+    [DONE] remove round red corners
+    [DONE] expand the menu bar to the whole width
+    [DONE] toggle button
+    [DONE] search
+
+Perf:
+            LCL             DEV
+    Home    0.55 - 1.4      2 - 3.80
+
+
+LCL
+    no caching
+        dpbase, dpmenu and dpsearch are returned as timestamp (not changed)
+    caching
+
+DEV
+    no caching
+    caching
+        bootstrap, dpmenu and dpsearch are returned in full
+        varies, sometimes base
+
+
+LESS/BS
+    BSVAR
+        DPVAR
+            DPVARBASE
+CSS
+
+latest version of less
+    2.5.0
+
+pythonport for less:
+    lesscpy 0.10.2
+
+DP
+    Performance of the browse images
+    Image not showing properly on https://digipal-stg.cch.kcl.ac.uk/digipal/hands/1175/graphs/
+        http://digipal2-images.cch.kcl.ac.uk/iip.old/iipsrv.fcgi?FIF=jp2/admin-upload/8/81600510-5096-4d1e-a421-087414d2e7b7.jp2&WID=1287&RGN=0.390152,0.350057,0.038826,0.025419&CVT=JPEG
+        the full image shows well in the annotator
+        one annotation of a y shows well too
+        500 on the server:
+            [Thu Apr 16 17:16:12 2015] [warn] [client 86.136.203.42] mod_fcgid: error reading data, FastCGI server closed connection
+            [Thu Apr 16 17:16:12 2015] [error] [client 86.136.203.42] Premature end of script headers: iipsrv.old.fcgi
+        Nothing in /vol/digipal2/webroot/images/logs/apache/iipsrv.log, why???
+
+*** MOA - GO Live
+    Make sure the public users can't see texts which are still in draft mode:
+        how to that?
+EXON -
+    new transcription
+    ** codicology
+    ** analysis
+
+Review the CT visibility on all the 9 instances
+Draft and Live are there twice
+
+-------------------------------------------------------------------------------
+
+Temporary todo for the faceted search
+
+
+JIRA 400: faceted search
+    +
+        all the facet values are visible
+        values have count
+        can apply any combination of facets for filtering (previously we were limited to a single content type)
+        faster (so far)
+        the CTs and views/layouts are not so dependent so we can do more for each CT with less constraints
+Other tickets resolved with this one:
+    JIRA 125: Page is a full citizen
+
+
+TODO
+    [done] finish pagination
+    filtering
+        [done] differentiate filtering from counting
+        special filters for
+            [done] 2. date type
+                [done] convert str to range
+                search for expression
+                    bug: 1001 works but not 1004
+            catalogue list (need a text input)
+            feature/component
+    values
+        show all the counts even if 0 (use lexicon? move the end of the list)
+        sort by count/label
+        unselect value
+    [done] 1. layouts/views
+        allow the CT to have different views:
+            list
+            grid
+            map
+    ajaxify
+    4. * graphs
+        *** performance
+            very slow to index
+            0.7s without sort Without
+            1.2s sort by two fields
+            3.7s for two facets
+            Due to the facets (3s), without it the search is done in
+            Due to sorting, almost 1s
+        ** multi-value fields
+            script, components, features
+        bugs:
+            repo place is empty
+            some repo city are empty
+            char type is empty, character, allograph
+    5. CT filter/facet
+        how to implement the counts?
+            a) with other SQL queries to retrieve the related records from the result set?
+                - we have a dual SQL+Whoosh system
+                + we can run it asynchronously to improve performance. There will be a small delay on the front end before the counts appear.
+            b) with other Whoosh queries on the other content types.
+                - might be unnecessarily heavy. But we could have a light version of the query just for that count.
+                - this is logically different from a) and c) because we run independent searches. Instead a) and c) will use the ids
+                of the records in the result set to find related records.
+            c) as part of the same first Whoosh query. Each record will a field for each related content types and the id of the related fields there.
+                then we can use whoosh faceting to retrieve the count for each (content type, related record id) and sum them to get a count. Need to
+                see how it impacts the performances.
+                + single system, single query.
+                - we bloat up the index with lots of ids
+                - may be slower than other implementations as we have to retrieve and group a lot of ids
+                - not parallelisable
+    6. Results set columns
+        Query phrase only applies to the fields displayed in the result set
+        Possibility to add/remove/swap fields in the results set
+        Possibility to reorder the fields in the result set
+    3. Sorting
+        [d] 0. Implement only the default sort order
+            [d] define fields in the structure and the transform to get the sortable value
+            [d] create new fields in the whoosh schema
+        1. Start with simple sort implementation:
+            [d] Click on a column to sort by it: up or down
+            [d] Then combine that with the default sort fields
+            sort by date
+            reverse sorting
+            show which field is searched by and the direction
+        2. full sort options:
+            pop up with sortable list of visible fields
+            reset button
+            a divider b/w sorted and non sorted field
+            an arrow to change the sort direction
+        How can we le the user chose the fields to be sorted by. E.g. city, repo, shelfmark, folio number?
+            a) we could have a pop-up with the list of fields being displayed and let the user reorder them
+            b) pre-defined sort orders
+            c) match the order of the columns
+    Persistent settings
+        some of the settings (order of the columns, sorting fields, collapsed/expanded facets) should be persisted across searches
+    Optimisation
+        Could be greatly optimised by retrieving the values from the hits rather than the database. prefetch_relate helps but it's not as fast.
+    Link to records and back
+    Removed references to haystack
+    Mobile version
+
+    Boolean field:
+        provide a mapping from 0/1 to a label
+            modify Image.full_size
+
+    Convert field dict to a class
+
+
+ Dates
+     ca 1016, 1000,1012.5,1025
+     1080s, 1080,1885,1090
+     1007x1025, 1007,1016,1025
+     ca 1002x1023, 1000,1012.5,1025
+     Saec. ix 800,850,900
+     Saec. ix ex. 870, 890, 900
+     Saec. ix ex. or ix/x 870, 900, 930
+     Saec. ix med.
+
+
+
+Order of the scribe names (roman numbers, ix before v)
+date of the scribe: slider not working
+
+
+allograph.hidden
+    [Done] Hide from the annotator
+    [Done] Hide from graph list on the Annotations tab if not logged in
+    [Done] Hide from graph list on the Hand annotation tab
+    [Done] Don't show in the search filters
+    [Done] Don't return in the search results
+
+
+
+- change form slow:
+
+itempartadmin on EXON:
+    StackedDynamicInlineAdmin are slower because they allocate 20 form for each inline (20s)
+        Rendering by the browser is also slow because of so many forms
+    Even stackedInline are very slow, they run too many identical queries (7s)
+
+    keywords <django.forms.fields.CharField object at 0x0000000004F049E8> <mezzanine.generic.fields.KeywordsField: keywords>
+
+    annotation_status <django.forms.models.ModelChoiceField object at 0x000000000503A8D0>
+
+    SELECT "django_site"."id", "django_site"."domain", "django_site"."name" FROM "django_site" WHERE UPPER("django_site"."domain"::text) = UPPER(%s)
+    SELECT "generic_keyword"."id", "generic_keyword"."site_id", "generic_keyword"."title", "generic_keyword"."slug" FROM "generic_keyword" WHERE "generic_keyword"."site_id" = %s  ORDER BY "generic_keyword"."title" ASC
+    SELECT "generic_assignedkeyword"."id", "generic_assignedkeyword"."_order", "generic_assignedkeyword"."keyword_id", "generic_assignedkeyword"."content_type_id", "generic_assignedkeyword"."object_pk", "generic_keyword"."id", "generic_keyword"."site_id", "generic_keyword"."title", "generic_keyword"."slug" FROM "generic_assignedkeyword" INNER JOIN "generic_keyword" ON ( "generic_assignedkeyword"."keyword_id" = "generic_keyword"."id" ) WHERE ("generic_assignedkeyword"."object_pk" = %s  AND "generic_assignedkeyword"."content_type_id" = %s ) ORDER BY "generic_assignedkeyword"."_order" ASC
+
+
+class InlineModelAdmin(BaseModelAdmin):
+
+EXON:Hand change form rendering is very slow in Chrome/Opera:
+In SelectFilter2.js:
+window.SelectFilter = {
+    init:
+
+    => due to the 1500 images in the dual list box
+
+jQuery(el).detach().appendTo(jQuery(el2)); console.log('h2');
+
+https://code.djangoproject.com/ticket/15220
+
+Pb - 12:40, 20/04/15
+
+http://bca.alwaysdata.net/
+http://bca.alwaysdata.net/admin/
+
+=>
+
+Unhandled Exception
+
+An unhandled exception was thrown by the application.
+
+SSH
+
+=>
+
+Access denied
+
+Restart App
+
+=> no app running
+
+Reset sh password through admin
+
+=>
+
+Can log in
+
+Site works (app running from 13:48)
+
+
+<form class="form-inline">
+  <div class="form-group">
+    <label class="sr-only" for="exampleInputAmount">Amount (in dollars)</label>
+    <div class="input-group">
+      <div class="input-group-addon">$</div>
+      <input type="text" class="form-control" id="exampleInputAmount" placeholder="Amount">
+      <div class="input-group-addon">.00</div>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary">Transfer cash</button>
+</form>
+
